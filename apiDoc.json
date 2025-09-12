@@ -1,0 +1,811 @@
+{
+	"info": {
+		"_postman_id": "c1a2b3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6",
+		"name": "CourseAdmin Pro - Student Mobile App API",
+		"description": "API documentation for the student-facing mobile application of CourseAdmin Pro. This collection covers all endpoints a student user would interact with, from authentication and course discovery to enrollment and progress tracking.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"description": "Endpoints for student registration and login.",
+			"item": [
+				{
+					"name": "Register Student",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"New Student\",\n    \"email\": \"student@example.com\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register-student",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register-student"
+							]
+						},
+						"description": "Registers a new student account. Returns the new user's details and a JWT token for authentication."
+					},
+					"response": [
+						{
+							"name": "Successful Registration",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"New Student\",\n    \"email\": \"student@example.com\",\n    \"password\": \"password123\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/auth/register-student",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"auth",
+										"register-student"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Student registration successful\",\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n        \"id\": \"usr-random-uuid\",\n        \"name\": \"New Student\",\n        \"email\": \"student@example.com\",\n        \"role\": \"Student\",\n        \"avatar_url\": \"https://picsum.photos/seed/1678886400/100\",\n        \"joined_date\": \"2024-07-28T00:00:00.000Z\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Login Student",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@example.com\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login-student",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login-student"
+							]
+						},
+						"description": "Logs in a student user. Returns the user's details and a JWT token. Store this token and use it as a Bearer token for authenticated requests."
+					},
+					"response": []
+				},
+				{
+					"name": "Login with Gmail",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"gmail.user@example.com\",\n    \"name\": \"Gmail User\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login-gmail",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login-gmail"
+							]
+						},
+						"description": "Handles login/registration via a Gmail account. If the user's email exists, it logs them in. If not, it creates a new student account and then logs them in. Returns a JWT token and user details in both cases."
+					},
+					"response": [
+						{
+							"name": "Successful Gmail Login/Registration",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"gmail.user@example.com\",\n    \"name\": \"Gmail User\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/auth/login-gmail",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"auth",
+										"login-gmail"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Gmail login successful\",\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n        \"id\": \"usr-some-uuid\",\n        \"name\": \"Gmail User\",\n        \"email\": \"gmail.user@example.com\",\n        \"role\": \"Student\",\n        \"avatar_url\": \"https://picsum.photos/seed/1678886400/100\",\n        \"joined_date\": \"2024-07-28T00:00:00.000Z\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Password Reset",
+			"description": "Endpoints for handling the forgot password and OTP verification flow.",
+			"item": [
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/forgot-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"forgot-password"
+							]
+						},
+						"description": "Initiates the password reset process for a user. It generates a 6-digit OTP, saves it with a 10-minute expiry, and sends it to the user's email address. To prevent user enumeration, it always returns a successful message, regardless of whether the email exists in the system."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"student@example.com\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/auth/forgot-password"
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"If an account with that email exists, a password reset code has been sent.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Verify OTP",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@example.com\",\n    \"otp\": \"123456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/verify-otp",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"verify-otp"
+							]
+						},
+						"description": "Verifies if the provided OTP is valid for the given email and has not expired."
+					},
+					"response": [
+						{
+							"name": "Successful Verification",
+							"originalRequest": {},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"message\": \"OTP verified successfully.\"\n}"
+						},
+						{
+							"name": "Failed Verification",
+							"originalRequest": {},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Invalid or expired OTP.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@example.com\",\n    \"otp\": \"123456\",\n    \"password\": \"newStrongPassword123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/reset-password",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"reset-password"
+							]
+						},
+						"description": "Resets the user's password after a successful OTP verification. The OTP must be provided again for security."
+					},
+					"response": [
+						{
+							"name": "Successful Password Reset",
+							"originalRequest": {},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Password has been reset successfully.\"\n}"
+						},
+						{
+							"name": "Failed Password Reset",
+							"originalRequest": {},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Invalid or expired OTP.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Resend OTP",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/resend-otp",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"resend-otp"
+							]
+						},
+						"description": "Resends a new password reset OTP to the user's email. This will invalidate any previously sent OTPs. Like the 'forgot-password' endpoint, it always returns a success message for security."
+					},
+					"response": [
+						{
+							"name": "Success Response",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"student@example.com\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/auth/resend-otp"
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"If an account with that email exists, a new password reset code has been sent.\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Public Course Discovery",
+			"description": "Endpoints for browsing courses without authentication.",
+			"item": [
+				{
+					"name": "Get Public Courses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/courses/public",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"courses",
+								"public"
+							]
+						},
+						"description": "Retrieves a list of all publicly available courses."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Public Course By ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/courses/public/crs-1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"courses",
+								"public",
+								"crs-1"
+							]
+						},
+						"description": "Retrieves the full details of a single public course, including its complete curriculum (modules and lessons)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Student Profile",
+			"description": "Authenticated endpoints for managing the student's own profile.",
+			"item": [
+				{
+					"name": "Get My Profile",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentAuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/student/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"me"
+							]
+						},
+						"description": "Retrieves the complete profile of the currently logged-in student, including their enrollments and watch history. Requires Bearer token."
+					},
+					"response": []
+				},
+				{
+					"name": "Update My Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentAuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Student Name\",\n    \"phoneNumber\": \"555-123-4567\",\n    \"avatar\": \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ...\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/student/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"me"
+							]
+						},
+						"description": "Updates the profile of the currently logged-in student. You can update the `name`, `phoneNumber`, and `avatar`. The `avatar` should be a base64 encoded data URL string (e.g., 'data:image/jpeg;base64,/9j/4AAQSk...'). The `email` cannot be changed. All fields are optional. Requires Bearer token."
+					},
+					"response": [
+						{
+							"name": "Successful Profile Update",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Updated Student Name\",\n    \"phoneNumber\": \"555-123-4567\",\n    \"avatar\": \"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ...\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{baseUrl}}/student/me",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"student",
+										"me"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Profile updated successfully.\",\n    \"data\": {\n        \"id\": \"usr-1\",\n        \"name\": \"Updated Student Name\",\n        \"email\": \"alice@example.com\",\n        \"role\": \"Gold Member\",\n        \"avatar\": \"http://localhost:5000/uploads/avatars/b1a2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6.jpeg\",\n        \"phoneNumber\": \"555-123-4567\",\n        \"status\": \"Active\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Enrolled Courses & Progress",
+			"description": "Authenticated endpoints for interacting with courses the student is enrolled in.",
+			"item": [
+				{
+					"name": "Enroll in Course",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentAuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/student/enroll/crs-2",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"enroll",
+								"crs-2"
+							]
+						},
+						"description": "Enrolls the current student in a specific course. Creates an enrollment record and a sales record. Requires Bearer token."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Enrolled Courses",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentAuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/student/my-courses",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"my-courses"
+							]
+						},
+						"description": "Retrieves a list of all courses the currently logged-in student is enrolled in. Requires Bearer token."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Enrolled Course Details",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentAuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/student/my-courses/crs-1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"my-courses",
+								"crs-1"
+							]
+						},
+						"description": "Retrieves comprehensive details for a single course the student is enrolled in. This includes the full curriculum, the student's specific watch history for that course, and their personal review (if any). Requires Bearer token."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Lesson Progress",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentAuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"lessonId\": \"les-1\",\n    \"progress\": 100\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/student/my-courses/progress",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"my-courses",
+								"progress"
+							]
+						},
+						"description": "Updates the watch progress for a specific lesson. This creates or updates a record in the student's watch history. Progress should be a percentage from 0 to 100. Requires Bearer token."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reviews",
+			"description": "Authenticated endpoints for managing course reviews.",
+			"item": [
+				{
+					"name": "Get My Reviews",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentAuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/student/my-reviews",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"my-reviews"
+							]
+						},
+						"description": "Retrieves all reviews submitted by the currently logged-in student. Requires Bearer token."
+					},
+					"response": []
+				},
+				{
+					"name": "Submit/Update Course Review",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentAuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"rating\": 5,\n    \"comment\": \"This course was amazing!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/student/courses/crs-1/review",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"courses",
+								"crs-1",
+								"review"
+							]
+						},
+						"description": "Submits a new review or updates an existing one for a course the student is enrolled in. The `rating` should be an integer between 1 and 5. Requires Bearer token."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"description": "Authenticated endpoint for fetching student notifications.",
+			"item": [
+				{
+					"name": "Get My Notifications",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentAuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/student/my-notifications",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"my-notifications"
+							]
+						},
+						"description": "Retrieves a list of notifications targeted to the currently logged-in student (e.g., for 'All Users', 'Students', or 'Gold Members'). Requires Bearer token."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{studentAuthToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5000/api"
+		},
+		{
+			"key": "studentAuthToken",
+			"value": "",
+			"description": "The JWT token obtained after a successful student login."
+		}
+	]
+}
