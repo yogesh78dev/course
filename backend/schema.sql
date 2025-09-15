@@ -21,6 +21,15 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+CREATE TABLE unverified_users (
+    email VARCHAR(255) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    otp VARCHAR(10) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE instructors (
     id CHAR(36) PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -53,6 +62,7 @@ CREATE TABLE courses (
     intro_video_url VARCHAR(255),
     access_type ENUM('lifetime', 'expiry') NOT NULL DEFAULT 'lifetime',
     access_duration_days INT,
+    enable_certificate BOOLEAN NOT NULL DEFAULT FALSE,
     instructor_id CHAR(36),
     category_id CHAR(36),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -96,6 +106,7 @@ CREATE TABLE enrollments (
     course_id CHAR(36) NOT NULL,
     enrollment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expiry_date TIMESTAMP NULL,
+    completion_percentage INT NOT NULL DEFAULT 0 CHECK (completion_percentage >= 0 AND completion_percentage <= 100),
     UNIQUE (user_id, course_id), -- A user can only enroll in a course once
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
@@ -127,21 +138,20 @@ CREATE TABLE reviews (
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 );
 
--- =============================================
--- Sales & Promotions Tables
--- =============================================
-
-CREATE TABLE sales (
+CREATE TABLE certificates (
     id CHAR(36) PRIMARY KEY,
     user_id CHAR(36) NOT NULL,
     course_id CHAR(36) NOT NULL,
-    amount DECIMAL(10, 2) NOT NULL,
-    status ENUM('Paid', 'Pending', 'Failed') NOT NULL,
-    sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    certificate_code VARCHAR(255) UNIQUE NOT NULL,
+    issue_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    UNIQUE (user_id, course_id)
 );
+
+-- =============================================
+-- Sales & Promotions Tables
+-- =============================================
 
 CREATE TABLE coupons (
     id CHAR(36) PRIMARY KEY,
@@ -162,6 +172,27 @@ CREATE TABLE coupon_courses (
     PRIMARY KEY (coupon_id, course_id),
     FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE CASCADE,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+);
+
+CREATE TABLE sales (
+    id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
+    course_id CHAR(36) NOT NULL,
+    original_amount DECIMAL(10, 2) NOT NULL,
+    discount_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    amount DECIMAL(10, 2) NOT NULL, -- Final amount paid
+    status ENUM('Paid', 'Pending', 'Failed') NOT NULL,
+    coupon_id CHAR(36) NULL,
+    payment_gateway VARCHAR(50),
+    gateway_order_id VARCHAR(255) NULL,
+    gateway_payment_id VARCHAR(255) NULL,
+    gateway_signature VARCHAR(255) NULL,
+    sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE SET NULL
 );
 
 CREATE TABLE coupon_usage (
@@ -228,11 +259,11 @@ INSERT INTO users (id, name, email, phone_number, password_hash, role, avatar_ur
 ('usr-3', 'Charlie Brown', 'charlie@example.com', NULL, @password_hash, 'Student', 'https://picsum.photos/seed/charlie/100', '2023-03-10'),
 ('usr-4', 'Admin User', 'admin@example.com', NULL, @password_hash, 'Admin', 'https://picsum.photos/seed/admin/100', '2022-12-01');
 
-INSERT INTO courses (id, title, description, price, duration, poster_image_url, banner_image_url, intro_video_url, access_type, access_duration_days, instructor_id, category_id) VALUES
-('crs-1', 'React for Beginners', 'A comprehensive guide to React.', 49.99, '10 hours', 'https://picsum.photos/seed/react/400/225', 'https://picsum.photos/seed/react-banner/1000/300', 'https://vimeo.com/123456', 'lifetime', NULL, 'inst-1', 'cat-1'),
-('crs-2', 'Python for Data Science', 'Learn Python for data analysis.', 79.99, '15 hours', 'https://picsum.photos/seed/python/400/225', 'https://picsum.photos/seed/python-banner/1000/300', 'https://vimeo.com/234567', 'expiry', 365, 'inst-2', 'cat-2'),
-('crs-3', 'UI/UX Design Fundamentals', 'Master the basics of UI/UX.', 39.99, '8 hours', 'https://picsum.photos/seed/design/400/225', 'https://picsum.photos/seed/design-banner/1000/300', 'https://vimeo.com/345678', 'lifetime', NULL, 'inst-3', 'cat-3'),
-('crs-4', 'Advanced Digital Marketing', 'Become a marketing expert.', 99.99, '20 hours', 'https://picsum.photos/seed/marketing/400/225', 'https://picsum.photos/seed/marketing-banner/1000/300', '', 'expiry', 180, 'inst-4', 'cat-4');
+INSERT INTO courses (id, title, description, price, duration, poster_image_url, banner_image_url, intro_video_url, access_type, access_duration_days, enable_certificate, instructor_id, category_id) VALUES
+('crs-1', 'React for Beginners', 'A comprehensive guide to React.', 49.99, '10 hours', 'https://picsum.photos/seed/react/400/225', 'https://picsum.photos/seed/react-banner/1000/300', 'https://vimeo.com/123456', 'lifetime', NULL, TRUE, 'inst-1', 'cat-1'),
+('crs-2', 'Python for Data Science', 'Learn Python for data analysis.', 79.99, '15 hours', 'https://picsum.photos/seed/python/400/225', 'https://picsum.photos/seed/python-banner/1000/300', 'https://vimeo.com/234567', 'expiry', 365, TRUE, 'inst-2', 'cat-2'),
+('crs-3', 'UI/UX Design Fundamentals', 'Master the basics of UI/UX.', 39.99, '8 hours', 'https://picsum.photos/seed/design/400/225', 'https://picsum.photos/seed/design-banner/1000/300', 'https://vimeo.com/345678', 'lifetime', NULL, FALSE, 'inst-3', 'cat-3'),
+('crs-4', 'Advanced Digital Marketing', 'Become a marketing expert.', 99.99, '20 hours', 'https://picsum.photos/seed/marketing/400/225', 'https://picsum.photos/seed/marketing-banner/1000/300', '', 'expiry', 180, TRUE, 'inst-4', 'cat-4');
 
 INSERT INTO modules (id, title, course_id, order_index) VALUES
 ('mod-1', 'Module 1: Introduction', 'crs-1', 0),
@@ -247,19 +278,28 @@ INSERT INTO lessons (id, title, description, type, content_url, duration_minutes
 ('les-5', 'Module 2 Quiz', 'Test your knowledge on core React concepts.', 'quiz', '/quizzes/module2.json', 20, '', 'mod-2', 2),
 ('les-6', 'Introduction to Python', 'Get started with the basics of Python programming.', 'video', 'https://vimeo.com/234567', 30, '', 'mod-3', 0);
 
-INSERT INTO sales (id, user_id, course_id, amount, status, sale_date) VALUES
-('sal-1', 'usr-1', 'crs-1', 49.99, 'Paid', '2023-05-10'),
-('sal-2', 'usr-2', 'crs-2', 79.99, 'Paid', '2023-05-12'),
-('sal-3', 'usr-3', 'crs-3', 39.99, 'Pending', '2023-05-15'),
-('sal-4', 'usr-1', 'crs-4', 99.99, 'Paid', '2023-05-18'),
-('sal-5', 'usr-2', 'crs-1', 49.99, 'Paid', '2023-05-19');
+INSERT INTO coupons (id, code, type, value, start_date, end_date, usage_limit, first_time_buyer_only) VALUES
+('cpn-1', 'SUMMER25', 'Percentage', 25, '2024-06-01', '2024-08-31', 100, FALSE),
+('cpn-2', 'WELCOME10', 'Fixed Amount', 10, '2024-01-01', '2024-12-31', NULL, TRUE),
+('cpn-3', 'EXPIRED50', 'Percentage', 50, '2023-01-01', '2023-01-31', 5, FALSE);
+
+INSERT INTO coupon_courses (coupon_id, course_id) VALUES
+('cpn-1', 'crs-1'),
+('cpn-1', 'crs-3');
+
+INSERT INTO sales (id, user_id, course_id, original_amount, amount, status, sale_date) VALUES
+('sal-1', 'usr-1', 'crs-1', 49.99, 49.99, 'Paid', '2023-05-10'),
+('sal-2', 'usr-2', 'crs-2', 79.99, 79.99, 'Paid', '2023-05-12'),
+('sal-3', 'usr-3', 'crs-3', 39.99, 39.99, 'Pending', '2023-05-15'),
+('sal-4', 'usr-1', 'crs-4', 99.99, 99.99, 'Paid', '2023-05-18'),
+('sal-5', 'usr-2', 'crs-1', 49.99, 49.99, 'Paid', '2023-05-19');
 
 -- Enrollments derived from sales data. Expiry dates calculated for 'expiry' type courses.
-INSERT INTO enrollments (id, user_id, course_id, enrollment_date, expiry_date) VALUES
-('enr-1', 'usr-1', 'crs-1', '2023-05-10', NULL),
-('enr-2', 'usr-2', 'crs-2', '2023-05-12', '2024-05-11'),
-('enr-3', 'usr-1', 'crs-4', '2023-05-18', '2023-11-14'),
-('enr-4', 'usr-2', 'crs-1', '2023-05-19', NULL);
+INSERT INTO enrollments (id, user_id, course_id, enrollment_date, expiry_date, completion_percentage) VALUES
+('enr-1', 'usr-1', 'crs-1', '2023-05-10', NULL, 0),
+('enr-2', 'usr-2', 'crs-2', '2023-05-12', '2024-05-11', 0),
+('enr-3', 'usr-1', 'crs-4', '2023-05-18', '2023-11-14', 100),
+('enr-4', 'usr-2', 'crs-1', '2023-05-19', NULL, 50);
 
 INSERT INTO watch_history (id, user_id, lesson_id, progress_percentage, watched_at, updated_at) VALUES
 ('wh-1', 'usr-2', 'les-1', 100, '2023-06-10 10:00:00', '2023-06-10 10:00:00'),
@@ -273,14 +313,8 @@ INSERT INTO reviews (id, course_id, user_id, rating, comment, review_date, statu
 ('rev-5', 'crs-4', 'usr-1', 5, 'This course is a game-changer. Highly recommended!', '2023-06-05', 'Approved'),
 ('rev-6', 'crs-2', 'usr-1', 4, 'Really helpful for my career.', '2023-06-06', 'Approved');
 
-INSERT INTO coupons (id, code, type, value, start_date, end_date, usage_limit, first_time_buyer_only) VALUES
-('cpn-1', 'SUMMER25', 'Percentage', 25, '2024-06-01', '2024-08-31', 100, FALSE),
-('cpn-2', 'WELCOME10', 'Fixed Amount', 10, '2024-01-01', '2024-12-31', NULL, TRUE),
-('cpn-3', 'EXPIRED50', 'Percentage', 50, '2023-01-01', '2023-01-31', 5, FALSE);
-
-INSERT INTO coupon_courses (coupon_id, course_id) VALUES
-('cpn-1', 'crs-1'),
-('cpn-1', 'crs-3');
+INSERT INTO certificates (id, user_id, course_id, certificate_code) VALUES
+('cert-1', 'usr-1', 'crs-4', 'CERT-CRS4-USR1-XYZ');
 
 INSERT INTO sent_notifications (id, title, message, target, action_type, action_payload, channels, sent_date) VALUES
 ('sent-not-1', 'New Course Available!', 'Check out our new "Advanced Digital Marketing" course.', 'All Users', 'View Course', 'crs-4', '["In-App", "Push"]', '2023-06-10'),

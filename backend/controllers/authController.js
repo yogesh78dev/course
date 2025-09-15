@@ -20,6 +20,17 @@ const getFullUserForResponse = async (userId) => {
     return rows[0];
 };
 
+const sendRegistrationEmail = async (email, otp) => {
+  // In a real application, you would use an email service like Nodemailer, SendGrid, etc.
+  console.log('--- SIMULATING REGISTRATION OTP EMAIL ---');
+  console.log(`To: ${email}`);
+  console.log(`Subject: Welcome! Your Verification Code`);
+  console.log(`Your verification code is: ${otp}`);
+  console.log('This code will expire in 10 minutes.');
+  console.log('------------------------------------');
+  return Promise.resolve();
+};
+
 const loginAdmin = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
     
@@ -49,40 +60,86 @@ const loginAdmin = asyncHandler(async (req, res) => {
     }
 });
 
-const registerStudent = asyncHandler(async (req, res) => {
+const registerSendOtp = asyncHandler(async (req, res) => {
     const { name, email, password } = req.body;
-
     if (!name || !email || !password) {
-        return res.status(400).json({ message: 'Please provide name, email, and password' });
+        return res.status(400).json({ message: 'Name, email, and password are required.' });
     }
-    
-    const [existingUsers] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
-    if (existingUsers.length > 0) {
-        return res.status(400).json({ message: 'User with this email already exists' });
+
+    const [existingUser] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (existingUser.length > 0) {
+        return res.status(400).json({ message: 'An account with this email already exists.' });
     }
 
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const expires_at = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await db.query(
+        'INSERT INTO unverified_users (email, name, password_hash, otp, expires_at) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name), password_hash = VALUES(password_hash), otp = VALUES(otp), expires_at = VALUES(expires_at)',
+        [email, name, password_hash, otp, expires_at]
+    );
+
+    await sendRegistrationEmail(email, otp);
+
+    res.json({ message: 'Verification OTP sent to your email.' });
+});
+
+
+const registerVerifyAndCreate = asyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+    if (!email || !otp) {
+        return res.status(400).json({ message: 'Email and OTP are required.' });
+    }
+    
+    const [unverifiedRows] = await db.query(
+        'SELECT * FROM unverified_users WHERE email = ? AND otp = ? AND expires_at > NOW()',
+        [email, otp]
+    );
+
+    if (unverifiedRows.length === 0) {
+        return res.status(400).json({ message: 'Invalid or expired OTP.' });
+    }
+
+    const unverifiedUser = unverifiedRows[0];
+    const { name, password_hash } = unverifiedUser;
+    
     const avatar_url = `https://picsum.photos/seed/${Date.now()}/100`;
     const userId = uuidv4();
 
-    await db.query(
-        'INSERT INTO users(id, name, email, password_hash, role, avatar_url) VALUES(?, ?, ?, ?, ?, ?)',
-        [userId, name, email, password_hash, 'Student', avatar_url]
-    );
-    
-    const newUser = await getFullUserForResponse(userId);
-    
-    const token = jwt.sign({ id: newUser.id, email: newUser.email, role: newUser.role }, JWT_SECRET, {
-        expiresIn: '30d',
-    });
+    const connection = await db.pool.getConnection();
+    try {
+        await connection.beginTransaction();
 
-    res.status(201).json({
-        message: 'Student registration successful',
-        token,
-        user: newUser
-    });
+        await connection.query(
+            'INSERT INTO users(id, name, email, password_hash, role, avatar_url) VALUES(?, ?, ?, ?, ?, ?)',
+            [userId, name, email, password_hash, 'Student', avatar_url]
+        );
+        
+        await connection.query('DELETE FROM unverified_users WHERE email = ?', [email]);
+
+        await connection.commit();
+
+        const newUser = await getFullUserForResponse(userId);
+        const token = jwt.sign({ id: newUser.id, email: newUser.email, role: newUser.role }, JWT_SECRET, {
+            expiresIn: '30d',
+        });
+
+        res.status(201).json({
+            message: 'Account verified and created successfully.',
+            token,
+            user: newUser
+        });
+
+    } catch (error) {
+        await connection.rollback();
+        throw error; // Let asyncHandler handle it
+    } finally {
+        connection.release();
+    }
 });
+
 
 const loginStudent = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
@@ -274,4 +331,4 @@ const resetPassword = asyncHandler(async (req, res) => {
 });
 
 
-module.exports = { loginAdmin, registerStudent, loginStudent, loginWithGmail, forgotPassword, verifyOtp, resetPassword, resendOtp };
+module.exports = { loginAdmin, registerSendOtp, registerVerifyAndCreate, loginStudent, loginWithGmail, forgotPassword, verifyOtp, resetPassword, resendOtp };

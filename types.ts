@@ -8,6 +8,7 @@ export interface Enrollment {
   courseId: string;
   enrollmentDate: string;
   expiryDate: string | null; // null for lifetime
+  completionPercentage: number;
 }
 
 export interface WatchHistoryEntry {
@@ -74,6 +75,7 @@ export interface Course {
   introVideoUrl: string;
   accessType: 'lifetime' | 'expiry';
   accessDuration: number | null; // in days
+  enableCertificate: boolean;
 }
 
 export interface Sale {
@@ -167,14 +169,23 @@ export interface SentNotification {
     sentDate: string;
     channels: NotificationChannel[];
 }
-// FIX: Add Promotion interface to be used for the promotion popup.
+
 export interface Promotion {
     show: boolean;
     title: string;
     description: string;
 }
 
-// FIX: Add student-specific types to resolve import errors.
+export interface Certificate {
+    id: string;
+    userId: string;
+    courseId: string;
+    certificateCode: string;
+    issueDate: string;
+    courseTitle: string;
+    instructorName: string;
+}
+
 // Student-specific types for mobile app functionality
 export interface StudentReview {
     rating: number;
@@ -189,4 +200,6 @@ export interface CourseDetailsPayload {
     course: Course;
     watchHistory: { lessonId: string; progress: number }[];
     myReview: StudentReview | null;
+    completionPercentage: number;
+    myCertificate: { id: string, certificateCode: string, issueDate: string } | null;
 }

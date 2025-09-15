@@ -2,7 +2,8 @@
 const express = require('express');
 const { 
     loginAdmin, 
-    registerStudent, 
+    registerSendOtp,
+    registerVerifyAndCreate,
     loginStudent, 
     loginWithGmail,
     forgotPassword,
@@ -16,8 +17,11 @@ const router = express.Router();
 // Admin Authentication
 router.post('/login-admin', loginAdmin);
 
-// Student (Mobile App) Authentication
-router.post('/register-student', registerStudent);
+// Student (Mobile App) Authentication with OTP
+router.post('/register-send-otp', registerSendOtp);
+router.post('/register-verify-and-create', registerVerifyAndCreate);
+
+// Student Login
 router.post('/login-student', loginStudent);
 router.post('/login-gmail', loginWithGmail);
 

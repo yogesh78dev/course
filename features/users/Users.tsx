@@ -107,11 +107,20 @@ const Users: React.FC = () => {
                 ))}
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <table className="w-full text-left">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
+                <table className="w-full text-left table-fixed">
+                     <colgroup>
+                        <col className="w-60" /> {/* Name */}
+                        <col className="w-64" /> {/* Email */}
+                        <col className="w-40" /> {/* Role */}
+                        <col className="w-40" /> {/* Phone */}
+                        <col className="w-36" /> {/* Joined */}
+                        <col className="w-28" /> {/* Status */}
+                        <col className="w-40" /> {/* Actions */}
+                    </colgroup>
                     <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th className="p-4 font-semibold text-sm text-gray-600">Name</th>
+                            <th className="p-4 font-semibold text-sm text-gray-600 sticky left-0 bg-gray-50 z-10 border-r border-gray-200">Name</th>
                             <th className="p-4 font-semibold text-sm text-gray-600">Email</th>
                             <th className="p-4 font-semibold text-sm text-gray-600">Role</th>
                             <th className="p-4 font-semibold text-sm text-gray-600">Phone Number</th>
@@ -123,11 +132,17 @@ const Users: React.FC = () => {
                     <tbody className="divide-y divide-gray-200">
                         {filteredUsers.map(user => (
                             <tr key={user.id}>
-                                <td className="p-4 flex items-center">
-                                    <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover mr-4"/>
-                                    <p className="font-medium text-gray-900">{user.name}</p>
+                                <td className="p-4 flex items-center sticky left-0 bg-white z-10 border-r border-gray-200">
+                                    <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover mr-4 flex-shrink-0"/>
+                                    <Tooltip text={user.name}>
+                                        <p className="font-medium text-gray-900 truncate">{user.name}</p>
+                                    </Tooltip>
                                 </td>
-                                <td className="p-4 text-gray-700">{user.email}</td>
+                                <td className="p-4 text-gray-700 truncate">
+                                    <Tooltip text={user.email}>
+                                        <span>{user.email}</span>
+                                    </Tooltip>
+                                </td>
                                 <td className="p-4">
                                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getRoleClass(user.role)}`}>
                                         {user.role}

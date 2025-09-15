@@ -5,11 +5,12 @@ const {
     updateStudentProfile, 
     getEnrolledCourses, 
     updateLessonProgress,
-    enrollInCourse,
     submitCourseReview,
     getMyReviews,
     getMyNotifications,
     getEnrolledCourseDetails,
+    claimCertificate,
+    getMyCertificates
 } = require('../controllers/studentController');
 const { protect, isStudent, admin } = require('../middlewares/authMiddleware');
 
@@ -27,7 +28,6 @@ router.route('/me')
 router.get('/my-courses', getEnrolledCourses);
 router.get('/my-courses/:courseId', getEnrolledCourseDetails);
 router.post('/my-courses/progress', updateLessonProgress);
-router.post('/enroll/:courseId', enrollInCourse);
 
 // Review routes
 router.get('/my-reviews', getMyReviews);
@@ -35,5 +35,9 @@ router.post('/courses/:courseId/review', submitCourseReview);
 
 // Notification routes
 router.get('/my-notifications', getMyNotifications);
+
+// Certificate routes
+router.post('/my-courses/:courseId/claim-certificate', claimCertificate);
+router.get('/my-certificates', getMyCertificates);
 
 module.exports = router;

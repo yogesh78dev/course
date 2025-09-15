@@ -137,7 +137,7 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
     const [formData, setFormData] = useState<Omit<Course, 'id'>>({
         title: '', description: '', price: 0, category: categories[0]?.name || '',
         duration: '', instructorId: instructors[0]?.id || '', posterImageUrl: '', bannerImageUrl: '',
-        introVideoUrl: '', modules: [], accessType: 'lifetime', accessDuration: null,
+        introVideoUrl: '', modules: [], accessType: 'lifetime', accessDuration: null, enableCertificate: false
     });
 
     const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
@@ -155,7 +155,14 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
     }, [instructors, course]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
+        const { name, value, type } = e.target;
+        
+        if (type === 'checkbox') {
+            const { checked } = e.target as HTMLInputElement;
+            setFormData(prev => ({ ...prev, [name]: checked }));
+            return;
+        }
+
         if (name === 'accessType') {
             setFormData(prev => ({
                 ...prev,
@@ -331,33 +338,46 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
                             </InputField>
                             <InputField label="Duration (e.g., 10 hours)" name="duration" value={formData.duration} onChange={handleChange} />
                         
-                            <div className="col-span-2 bg-gray-50 p-4 rounded-lg border mt-2">
-                                <h4 className="font-semibold text-gray-800 mb-2">Access Control</h4>
-                                <div className="flex items-center space-x-6">
-                                    <div className="flex items-center">
-                                        <input type="radio" id="lifetime" name="accessType" value="lifetime" checked={formData.accessType === 'lifetime'} onChange={handleChange} className="focus:ring-primary h-4 w-4 text-primary border-gray-300" />
-                                        <label htmlFor="lifetime" className="ml-2 block text-sm text-gray-900">Lifetime Access</label>
+                            <div className="col-span-2 bg-gray-50 p-4 rounded-lg border mt-2 space-y-4">
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 mb-2">Access Control</h4>
+                                    <div className="flex items-center space-x-6">
+                                        <div className="flex items-center">
+                                            <input type="radio" id="lifetime" name="accessType" value="lifetime" checked={formData.accessType === 'lifetime'} onChange={handleChange} className="focus:ring-primary h-4 w-4 text-primary border-gray-300" />
+                                            <label htmlFor="lifetime" className="ml-2 block text-sm text-gray-900">Lifetime Access</label>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <input type="radio" id="expiry" name="accessType" value="expiry" checked={formData.accessType === 'expiry'} onChange={handleChange} className="focus:ring-primary h-4 w-4 text-primary border-gray-300" />
+                                            <label htmlFor="expiry" className="ml-2 block text-sm text-gray-900">Limited Time</label>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center">
-                                        <input type="radio" id="expiry" name="accessType" value="expiry" checked={formData.accessType === 'expiry'} onChange={handleChange} className="focus:ring-primary h-4 w-4 text-primary border-gray-300" />
-                                        <label htmlFor="expiry" className="ml-2 block text-sm text-gray-900">Limited Time</label>
-                                    </div>
+                                    {formData.accessType === 'expiry' && (
+                                        <div className="mt-4">
+                                            <label htmlFor="accessDuration" className="block text-sm font-medium text-gray-700 mb-1">Access Duration (days)</label>
+                                            <input 
+                                                type="number" 
+                                                id="accessDuration" 
+                                                name="accessDuration" 
+                                                value={formData.accessDuration || ''} 
+                                                onChange={handleChange} 
+                                                placeholder="e.g., 365"
+                                                min="1"
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" 
+                                            />
+                                        </div>
+                                    )}
                                 </div>
-                                {formData.accessType === 'expiry' && (
-                                    <div className="mt-4">
-                                        <label htmlFor="accessDuration" className="block text-sm font-medium text-gray-700 mb-1">Access Duration (days)</label>
-                                        <input 
-                                            type="number" 
-                                            id="accessDuration" 
-                                            name="accessDuration" 
-                                            value={formData.accessDuration || ''} 
-                                            onChange={handleChange} 
-                                            placeholder="e.g., 365"
-                                            min="1"
-                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" 
-                                        />
-                                    </div>
-                                )}
+                                <div>
+                                    <h4 className="font-semibold text-gray-800 mb-2">Certification</h4>
+                                    <label htmlFor="enableCertificate" className="flex items-center cursor-pointer">
+                                        <div className="relative">
+                                            <input type="checkbox" id="enableCertificate" name="enableCertificate" className="sr-only" checked={formData.enableCertificate} onChange={handleChange} />
+                                            <div className={`block w-10 h-6 rounded-full transition-colors ${formData.enableCertificate ? 'bg-primary' : 'bg-gray-300'}`}></div>
+                                            <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.enableCertificate ? 'translate-x-4' : ''}`}></div>
+                                        </div>
+                                        <div className="ml-3 text-sm text-gray-700">Enable Certificate of Completion</div>
+                                    </label>
+                                </div>
                             </div>
                         </div>
                     </div>

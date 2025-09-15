@@ -1,4 +1,4 @@
-import { Course, User, Instructor, Category, ReviewStatus, Coupon, NotificationTemplate, Sale, StudentReview, Review } from "../types";
+import { Course, User, Instructor, Category, ReviewStatus, Coupon, NotificationTemplate, Sale, StudentReview, Review, Certificate } from "../types";
 
 // const API_URL = process.env.REACT_APP_API_URL || '/api'; // Use environment variable with a fallback
 const API_URL = 'http://localhost:5000/api';
@@ -47,6 +47,9 @@ export const login = (email: string, password: string): Promise<{ token: string 
     method: 'POST',
     body: JSON.stringify({ email, password }),
 });
+export const registerSendOtp = (data: any) => request('/auth/register-send-otp', { method: 'POST', body: JSON.stringify(data) });
+export const registerVerifyAndCreate = (data: any) => request('/auth/register-verify-and-create', { method: 'POST', body: JSON.stringify(data) });
+
 
 // Courses
 export const getCourses = () => request('/courses');
@@ -102,7 +105,7 @@ export const getStudentProfile = (userId: string) => request(`/users/profile/${u
 // Student-facing APIs (for mobile app)
 export const getStudentEnrolledCourses = () => request('/student/my-courses');
 export const getStudentEnrolledCourseDetails = (courseId: string) => request(`/student/my-courses/${courseId}`);
-export const updateStudentLessonProgress = (lessonId: string, progress: number) => request('/student/my-courses/progress', {
+export const updateStudentLessonProgress = (lessonId: string, progress: number): Promise<{ data: { newCompletionPercentage: number } }> => request('/student/my-courses/progress', {
     method: 'POST',
     body: JSON.stringify({ lessonId, progress }),
 });
@@ -110,3 +113,26 @@ export const submitStudentCourseReview = (courseId: string, rating: number, comm
     method: 'POST',
     body: JSON.stringify({ rating, comment }),
 });
+
+// --- Certificate APIs ---
+export const claimCertificate = (courseId: string): Promise<{ data: Certificate }> => request(`/student/my-courses/${courseId}/claim-certificate`, { method: 'POST' });
+export const getMyCertificates = (): Promise<{ data: Certificate[] }> => request('/student/my-certificates');
+
+
+// --- Purchase Flow APIs ---
+export const initiatePurchase = (courseId: string, couponCode?: string) => request('/student/purchase/initiate', {
+    method: 'POST',
+    body: JSON.stringify({ courseId, couponCode }),
+});
+
+export const verifyPayment = (paymentData: {
+    saleId: string;
+    gatewayOrderId: string;
+    gatewayPaymentId: string;
+    gatewaySignature: string;
+}) => request('/student/purchase/verify', {
+    method: 'POST',
+    body: JSON.stringify(paymentData),
+});
+
+export const getMySalesHistory = () => request('/student/purchase/history');

@@ -17,10 +17,12 @@ const getFullCourse = async (courseId) => {
     const course = courseRows[0];
     course.category = course.categoryName;
     course.instructorName = course.instructorName;
+    course.enableCertificate = !!course.enable_certificate; // Convert to boolean
     
     // Align with frontend type
     delete course.categoryName;
     delete course.category_id;
+    delete course.enable_certificate;
     
     const [moduleRows] = await db.query('SELECT * FROM modules WHERE course_id = ? ORDER BY order_index ASC', [courseId]);
     
@@ -56,7 +58,7 @@ const getFullCourse = async (courseId) => {
 const getCourses = asyncHandler(async (req, res) => {
     const query = `
         SELECT c.id, c.title, c.price, c.duration, c.instructor_id as "instructorId", 
-               c.poster_image_url as "posterImageUrl",
+               c.poster_image_url as "posterImageUrl", c.enable_certificate as "enableCertificate",
                cat.name as category,
                i.name as instructorName
         FROM courses c
@@ -65,7 +67,8 @@ const getCourses = asyncHandler(async (req, res) => {
         ORDER BY c.created_at DESC
     `;
     const [rows] = await db.query(query);
-    res.json({ message: 'Successfully fetched all courses.', data: rows });
+    const data = rows.map(r => ({...r, enableCertificate: !!r.enableCertificate}));
+    res.json({ message: 'Successfully fetched all courses.', data: data });
 });
 
 const getCourseById = asyncHandler(async (req, res) => {
@@ -78,7 +81,7 @@ const getCourseById = asyncHandler(async (req, res) => {
 });
 
 const createOrUpdateCourseWithCurriculum = async (courseData, courseId = null) => {
-    const { title, description, price, category, duration, instructorId, posterImageUrl, bannerImageUrl, introVideoUrl, accessType, accessDuration, modules = [] } = courseData;
+    const { title, description, price, category, duration, instructorId, posterImageUrl, bannerImageUrl, introVideoUrl, accessType, accessDuration, enableCertificate, modules = [] } = courseData;
     const isUpdate = !!courseId;
     const newCourseId = isUpdate ? courseId : uuidv4();
     
@@ -93,13 +96,13 @@ const createOrUpdateCourseWithCurriculum = async (courseData, courseId = null) =
             await connection.query(`DELETE FROM lessons WHERE module_id IN (SELECT id FROM modules WHERE course_id = ?)`, [newCourseId]);
             await connection.query(`DELETE FROM modules WHERE course_id = ?`, [newCourseId]);
             await connection.query(
-                'UPDATE courses SET title=?, description=?, price=?, category_id=?, duration=?, instructor_id=?, poster_image_url=?, banner_image_url=?, intro_video_url=?, access_type=?, access_duration_days=? WHERE id=?',
-                [title, description, price, categoryId, duration, instructorId, posterImageUrl, bannerImageUrl, introVideoUrl, accessType, accessDuration, newCourseId]
+                'UPDATE courses SET title=?, description=?, price=?, category_id=?, duration=?, instructor_id=?, poster_image_url=?, banner_image_url=?, intro_video_url=?, access_type=?, access_duration_days=?, enable_certificate=? WHERE id=?',
+                [title, description, price, categoryId, duration, instructorId, posterImageUrl, bannerImageUrl, introVideoUrl, accessType, accessDuration, enableCertificate, newCourseId]
             );
         } else {
             await connection.query(
-                'INSERT INTO courses (id, title, description, price, category_id, duration, instructor_id, poster_image_url, banner_image_url, intro_video_url, access_type, access_duration_days) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                [newCourseId, title, description, price, categoryId, duration, instructorId, posterImageUrl, bannerImageUrl, introVideoUrl, accessType, accessDuration]
+                'INSERT INTO courses (id, title, description, price, category_id, duration, instructor_id, poster_image_url, banner_image_url, intro_video_url, access_type, access_duration_days, enable_certificate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [newCourseId, title, description, price, categoryId, duration, instructorId, posterImageUrl, bannerImageUrl, introVideoUrl, accessType, accessDuration, enableCertificate]
             );
         }
 
@@ -159,6 +162,7 @@ const deleteCourse = asyncHandler(async (req, res) => {
 const getPublicCourses = asyncHandler(async (req, res) => {
     const query = `
         SELECT c.id, c.title, c.price, c.duration, c.poster_image_url as "posterImageUrl",
+               c.enable_certificate as "enableCertificate",
                cat.name as category, i.name as instructorName
         FROM courses c
         LEFT JOIN categories cat ON c.category_id = cat.id
@@ -166,7 +170,8 @@ const getPublicCourses = asyncHandler(async (req, res) => {
         ORDER BY c.created_at DESC
     `;
     const [rows] = await db.query(query);
-    res.json({ message: 'Successfully fetched all public courses.', data: rows });
+    const data = rows.map(r => ({...r, enableCertificate: !!r.enableCertificate}));
+    res.json({ message: 'Successfully fetched all public courses.', data: data });
 });
 
 const getPublicCourseById = asyncHandler(async (req, res) => {

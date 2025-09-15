@@ -1,6 +1,5 @@
 import React from 'react';
 import type { View } from '../../App';
-// FIX: Corrected the import path for icons from '../icons' to '../icons/index' to resolve module loading error.
 import { DashboardIcon, CoursesIcon, UsersIcon, SalesIcon, ReviewsIcon, SettingsIcon, CouponIcon, BellIcon, InstructorIcon, LogoutIcon } from '../icons/index';
 
 interface SidebarProps {

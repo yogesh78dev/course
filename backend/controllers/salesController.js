@@ -6,6 +6,8 @@ const getSales = asyncHandler(async (req, res) => {
     const query = `
         SELECT 
             s.id,
+            s.original_amount,
+            s.discount_amount,
             s.amount,
             s.status,
             DATE_FORMAT(s.sale_date, '%Y-%m-%d') as date,
@@ -22,6 +24,8 @@ const getSales = asyncHandler(async (req, res) => {
 
     const formattedData = rows.map(row => ({
         id: row.id,
+        originalAmount: row.original_amount,
+        discountAmount: row.discount_amount,
         amount: row.amount,
         status: row.status,
         date: row.date,
@@ -48,7 +52,7 @@ const updateSaleStatus = asyncHandler(async (req, res) => {
         // Re-fetch with joins to return the full object
         const query = `
             SELECT 
-                s.id, s.amount, s.status, DATE_FORMAT(s.sale_date, '%Y-%m-%d') as date,
+                s.id, s.original_amount, s.discount_amount, s.amount, s.status, DATE_FORMAT(s.sale_date, '%Y-%m-%d') as date,
                 u.id as user_id, u.name as user_name,
                 c.id as course_id, c.title as course_title
             FROM sales s
@@ -61,6 +65,8 @@ const updateSaleStatus = asyncHandler(async (req, res) => {
 
         const responseData = {
             id: updatedSale.id,
+            originalAmount: updatedSale.original_amount,
+            discountAmount: updatedSale.discount_amount,
             amount: updatedSale.amount,
             status: updatedSale.status,
             date: updatedSale.date,
@@ -75,7 +81,7 @@ const updateSaleStatus = asyncHandler(async (req, res) => {
 });
 
 const getAnalytics = asyncHandler(async (req, res) => {
-    const [total] = await db.query('SELECT SUM(amount) as totalRevenue, COUNT(id) as totalSales FROM sales');
+    const [total] = await db.query("SELECT SUM(amount) as totalRevenue, COUNT(id) as totalSales FROM sales WHERE status = 'Paid'");
     res.json({ 
         message: 'Successfully fetched analytics.', 
         data: { 

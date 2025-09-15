@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// FIX: Corrected the import path for icons from '../icons' to '../icons/index' to resolve module loading error.
 import { SearchIcon, BellIcon, ChevronDownIcon } from '../icons/index';
 import NotificationPanel from '../../features/notifications/components/NotificationPanel';
 import { useAppContext } from '../../context/AppContext';

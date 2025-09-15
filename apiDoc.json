@@ -420,6 +420,152 @@
 			]
 		},
 		{
+			"name": "Purchase Flow",
+			"description": "Authenticated endpoints for purchasing a course. This flow should be followed for all new enrollments.",
+			"item": [
+				{
+					"name": "Initiate Purchase",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentAuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"courseId\": \"crs-2\",\n    \"couponCode\": \"WELCOME10\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/student/purchase/initiate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"purchase",
+								"initiate"
+							]
+						},
+						"description": "Starts the purchase process for a course. It validates the request, applies any valid coupon, and creates a 'Pending' sale record. The response contains the necessary information for the mobile app to initialize the payment gateway SDK. `couponCode` is optional. Requires Bearer token."
+					},
+					"response": [
+						{
+							"name": "Successful Initiation",
+							"originalRequest": {},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Order created successfully. Proceed to payment.\",\n    \"data\": {\n        \"saleId\": \"sale-uuid-123\",\n        \"gatewayOrderId\": \"order_mock_12345\",\n        \"amount\": 69.99,\n        \"currency\": \"INR\",\n        \"gatewayKey\": \"your_public_gateway_key\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Verify Payment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentAuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"saleId\": \"sale-uuid-123\",\n    \"gatewayPaymentId\": \"pay_mock_abcdef\",\n    \"gatewayOrderId\": \"order_mock_12345\",\n    \"gatewaySignature\": \"mock_signature_from_gateway\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/student/purchase/verify",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"purchase",
+								"verify"
+							]
+						},
+						"description": "Called after the user completes the payment via the payment gateway on the mobile app. The server verifies the payment signature. If successful, it updates the sale status to 'Paid' and creates the course enrollment. Requires Bearer token."
+					},
+					"response": [
+						{
+							"name": "Successful Verification",
+							"originalRequest": {},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Payment successful. You are now enrolled in the course.\"\n}"
+						},
+						{
+							"name": "Failed Verification",
+							"originalRequest": {},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Payment verification failed.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get My Sales History",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentAuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/student/purchase/history",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"purchase",
+								"history"
+							]
+						},
+						"description": "Retrieves the purchase history for the currently logged-in student. Requires Bearer token."
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Student Profile",
 			"description": "Authenticated endpoints for managing the student's own profile.",
 			"item": [
@@ -546,36 +692,6 @@
 			"name": "Enrolled Courses & Progress",
 			"description": "Authenticated endpoints for interacting with courses the student is enrolled in.",
 			"item": [
-				{
-					"name": "Enroll in Course",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{studentAuthToken}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/student/enroll/crs-2",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"student",
-								"enroll",
-								"crs-2"
-							]
-						},
-						"description": "Enrolls the current student in a specific course. Creates an enrollment record and a sales record. Requires Bearer token."
-					},
-					"response": []
-				},
 				{
 					"name": "Get My Enrolled Courses",
 					"request": {

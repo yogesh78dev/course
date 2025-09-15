@@ -29,7 +29,8 @@ const getStudentProfile = asyncHandler(async (req, res) => {
         SELECT
             course_id as 'courseId', 
             DATE_FORMAT(enrollment_date, '%Y-%m-%d') as 'enrollmentDate',
-            DATE_FORMAT(expiry_date, '%Y-%m-%d') as 'expiryDate'
+            DATE_FORMAT(expiry_date, '%Y-%m-%d') as 'expiryDate',
+            completion_percentage as 'completionPercentage'
         FROM enrollments WHERE user_id = ?
     `;
     const [enrollments] = await db.query(enrollmentsQuery, [studentId]);
@@ -134,7 +135,7 @@ const updateStudentProfile = asyncHandler(async (req, res) => {
 
 const getEnrolledCourses = asyncHandler(async (req, res) => {
     const query = `
-        SELECT c.*, cat.name as category, i.name as instructorName 
+        SELECT c.*, cat.name as category, i.name as instructorName, e.completion_percentage as completionPercentage
         FROM courses c
         JOIN enrollments e ON c.id = e.course_id
         LEFT JOIN categories cat ON c.category_id = cat.id
@@ -147,55 +148,48 @@ const getEnrolledCourses = asyncHandler(async (req, res) => {
 
 const updateLessonProgress = asyncHandler(async (req, res) => {
     const { lessonId, progress } = req.body;
+    const studentId = req.user.id;
+
+    // 1. Update watch history
     const historyId = uuidv4();
     const query = `
         INSERT INTO watch_history (id, user_id, lesson_id, progress_percentage)
         VALUES (?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE progress_percentage = VALUES(progress_percentage)
     `;
-    await db.query(query, [historyId, req.user.id, lessonId, progress]);
-    res.json({ message: 'Lesson progress updated successfully.' });
-});
+    await db.query(query, [historyId, studentId, lessonId, progress]);
 
-const enrollInCourse = asyncHandler(async (req, res) => {
-    const { courseId } = req.params;
-    const studentId = req.user.id;
+    // 2. Recalculate course completion percentage
+    const [[courseInfo]] = await db.query(
+        'SELECT m.course_id FROM lessons l JOIN modules m ON l.module_id = m.id WHERE l.id = ?',
+        [lessonId]
+    );
+    const courseId = courseInfo.course_id;
 
-    const [existing] = await db.query('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?', [studentId, courseId]);
-    if (existing.length > 0) {
-        return res.status(400).json({ message: 'Already enrolled in this course.' });
-    }
+    const [[{ totalLessons }]] = await db.query(
+        'SELECT COUNT(l.id) as totalLessons FROM lessons l JOIN modules m ON l.module_id = m.id WHERE m.course_id = ?',
+        [courseId]
+    );
 
-    const [courseRows] = await db.query('SELECT price, access_type, access_duration_days FROM courses WHERE id = ?', [courseId]);
-    if (courseRows.length === 0) {
-        return res.status(404).json({ message: 'Course not found.' });
-    }
-    const course = courseRows[0];
+    const [[{ completedLessons }]] = await db.query(
+        `SELECT COUNT(DISTINCT wh.lesson_id) as completedLessons FROM watch_history wh
+         JOIN lessons l ON wh.lesson_id = l.id
+         JOIN modules m ON l.module_id = m.id
+         WHERE wh.user_id = ? AND m.course_id = ? AND wh.progress_percentage = 100`,
+        [studentId, courseId]
+    );
+    
+    const newCompletionPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+    
+    await db.query(
+        'UPDATE enrollments SET completion_percentage = ? WHERE user_id = ? AND course_id = ?',
+        [newCompletionPercentage, studentId, courseId]
+    );
 
-    let expiryDate = null;
-    if (course.access_type === 'expiry' && course.access_duration_days) {
-        const now = new Date();
-        now.setDate(now.getDate() + course.access_duration_days);
-        expiryDate = now;
-    }
-
-    const connection = await db.pool.getConnection();
-    try {
-        await connection.beginTransaction();
-        const enrollmentId = uuidv4();
-        await connection.query('INSERT INTO enrollments (id, user_id, course_id, expiry_date) VALUES (?, ?, ?, ?)', [enrollmentId, studentId, courseId, expiryDate]);
-        
-        const saleId = uuidv4();
-        await connection.query('INSERT INTO sales (id, user_id, course_id, amount, status) VALUES (?, ?, ?, ?, ?)', [saleId, studentId, courseId, course.price, 'Paid']);
-
-        await connection.commit();
-        res.status(201).json({ message: 'Successfully enrolled in the course.' });
-    } catch (error) {
-        await connection.rollback();
-        throw error;
-    } finally {
-        connection.release();
-    }
+    res.json({ 
+        message: 'Lesson progress updated successfully.',
+        data: { newCompletionPercentage }
+    });
 });
 
 const submitCourseReview = asyncHandler(async (req, res) => {
@@ -270,10 +264,11 @@ const getEnrolledCourseDetails = asyncHandler(async (req, res) => {
     const { courseId } = req.params;
     const studentId = req.user.id;
 
-    const [enrollment] = await db.query('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?', [studentId, courseId]);
+    const [enrollment] = await db.query('SELECT completion_percentage FROM enrollments WHERE user_id = ? AND course_id = ?', [studentId, courseId]);
     if (enrollment.length === 0) {
         return res.status(403).json({ message: 'You are not enrolled in this course.' });
     }
+    const completionPercentage = enrollment[0].completion_percentage;
 
     const courseQuery = `
         SELECT c.*, cat.name as categoryName, i.name as instructorName
@@ -287,8 +282,10 @@ const getEnrolledCourseDetails = asyncHandler(async (req, res) => {
 
     const course = courseRows[0];
     course.category = course.categoryName;
+    course.enableCertificate = !!course.enable_certificate;
     delete course.categoryName;
     delete course.category_id;
+    delete course.enable_certificate;
     
     const [moduleRows] = await db.query('SELECT * FROM modules WHERE course_id = ? ORDER BY order_index ASC', [courseId]);
     const [lessonRows] = await db.query(
@@ -317,13 +314,71 @@ const getEnrolledCourseDetails = asyncHandler(async (req, res) => {
     const reviewQuery = `SELECT rating, comment FROM reviews WHERE user_id = ? AND course_id = ?`;
     const [reviewRows] = await db.query(reviewQuery, [studentId, courseId]);
 
+    const certificateQuery = `SELECT id, certificate_code as certificateCode, DATE_FORMAT(issue_date, '%Y-%m-%d') as issueDate FROM certificates WHERE user_id = ? AND course_id = ?`;
+    const [certificateRows] = await db.query(certificateQuery, [studentId, courseId]);
+
     const responseData = {
         course,
         watchHistory,
         myReview: reviewRows.length > 0 ? reviewRows[0] : null,
+        completionPercentage,
+        myCertificate: certificateRows.length > 0 ? certificateRows[0] : null,
     };
 
     res.json({ message: 'Successfully fetched enrolled course details.', data: responseData });
+});
+
+const claimCertificate = asyncHandler(async (req, res) => {
+    const { courseId } = req.params;
+    const studentId = req.user.id;
+
+    const [[enrollment]] = await db.query('SELECT completion_percentage FROM enrollments WHERE user_id = ? AND course_id = ?', [studentId, courseId]);
+    const [[course]] = await db.query('SELECT enable_certificate FROM courses WHERE id = ?', [courseId]);
+    const [existingCert] = await db.query('SELECT id FROM certificates WHERE user_id = ? AND course_id = ?', [studentId, courseId]);
+
+    if (!enrollment || !course) {
+        return res.status(404).json({ message: 'Enrollment or course not found.' });
+    }
+    if (enrollment.completion_percentage < 100) {
+        return res.status(400).json({ message: 'Course is not yet completed.' });
+    }
+    if (!course.enable_certificate) {
+        return res.status(400).json({ message: 'This course does not offer a certificate.' });
+    }
+    if (existingCert.length > 0) {
+        return res.status(400).json({ message: 'Certificate has already been claimed.' });
+    }
+
+    const certificateId = uuidv4();
+    const certificateCode = `CERT-${courseId.substring(0, 4).toUpperCase()}-${studentId.substring(0, 4).toUpperCase()}-${uuidv4().substring(0, 8).toUpperCase()}`;
+
+    await db.query(
+        'INSERT INTO certificates (id, user_id, course_id, certificate_code) VALUES (?, ?, ?, ?)',
+        [certificateId, studentId, courseId, certificateCode]
+    );
+
+    const [[newCertificate]] = await db.query(
+        "SELECT id, certificate_code as certificateCode, DATE_FORMAT(issue_date, '%Y-%m-%d') as issueDate FROM certificates WHERE id = ?",
+        [certificateId]
+    );
+    
+    res.status(201).json({ message: 'Certificate claimed successfully!', data: newCertificate });
+});
+
+const getMyCertificates = asyncHandler(async (req, res) => {
+    const studentId = req.user.id;
+    const query = `
+        SELECT cer.id, cer.user_id as userId, cer.course_id as courseId, 
+               cer.certificate_code as certificateCode, DATE_FORMAT(cer.issue_date, '%Y-%m-%d') as issueDate,
+               c.title as courseTitle, i.name as instructorName
+        FROM certificates cer
+        JOIN courses c ON cer.course_id = c.id
+        JOIN instructors i ON c.instructor_id = i.id
+        WHERE cer.user_id = ?
+        ORDER BY cer.issue_date DESC
+    `;
+    const [certificates] = await db.query(query, [studentId]);
+    res.json({ message: 'Successfully fetched your certificates.', data: certificates });
 });
 
 module.exports = { 
@@ -331,9 +386,10 @@ module.exports = {
     updateStudentProfile, 
     getEnrolledCourses, 
     updateLessonProgress,
-    enrollInCourse,
     submitCourseReview,
     getMyReviews,
     getMyNotifications,
     getEnrolledCourseDetails,
+    claimCertificate,
+    getMyCertificates
 };
