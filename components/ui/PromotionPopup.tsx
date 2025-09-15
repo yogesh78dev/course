@@ -1,6 +1,5 @@
 import React from 'react';
 import { useAppContext } from '../../context/AppContext';
-// FIX: Corrected the import path for icons from '../icons' to '../icons/index' to resolve module loading error.
 import { CloseIcon } from '../icons/index';
 
 const PromotionPopup: React.FC = () => {

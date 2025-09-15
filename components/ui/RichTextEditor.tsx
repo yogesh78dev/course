@@ -1,5 +1,4 @@
 import React, { useRef, useEffect } from 'react';
-// FIX: Corrected the import path for icons from '../icons' to '../icons/index' to resolve module loading error.
 import { BoldIcon, ItalicIcon, UnderlineIcon, ListIcon } from '../icons/index';
 
 interface RichTextEditorProps {

@@ -1,5 +1,4 @@
 import React from 'react';
-// FIX: Corrected the import path for icons from '../icons' to '../icons/index' to resolve module loading error.
 import { CloseIcon } from '../icons/index';
 
 interface ModalProps {

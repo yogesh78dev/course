@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
-// FIX: Corrected the import path for icons from '../../components/icons' to '../../components/icons/index' to resolve module loading error.
 import { DeleteIcon, EditIcon } from '../../components/icons/index';
 import Modal from '../../components/ui/Modal';
 import { Category } from '../../types';

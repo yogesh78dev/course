@@ -4,7 +4,6 @@ import { useAppContext } from '../../../context/AppContext';
 import Modal from '../../../components/ui/Modal';
 import ImageUpload from '../../../components/ui/ImageUpload';
 import RichTextEditor from '../../../components/ui/RichTextEditor';
-// FIX: Corrected the import path for icons from '../../../components/icons' to '../../../components/icons/index' to resolve module loading error.
 import { PlusIcon, EditIcon, DeleteIcon, VideoIcon, FileIcon, QuizIcon, AssignmentIcon, GripVerticalIcon } from '../../../components/icons/index';
 
 // --- LessonForm Component ---

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// FIX: Corrected the import path for icons from '../icons' to '../icons/index' to resolve module loading error.
 import { ChevronDownIcon, LogoutIcon } from '../icons/index';
 import { useAppContext } from '../../context/AppContext';
 

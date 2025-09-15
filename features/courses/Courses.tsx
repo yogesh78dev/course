@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Course, ReviewStatus } from '../../types';
-// FIX: Corrected the import path for icons from '../../components/icons' to '../../components/icons/index' to resolve module loading error.
 import { EditIcon, DeleteIcon, PlusIcon, StarIcon } from '../../components/icons/index';
 import Modal from '../../components/ui/Modal';
 import CourseForm from './components/CourseForm';

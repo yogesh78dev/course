@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../../context/AppContext';
 import { NotificationTarget, NotificationActionType, NotificationAction, NotificationTemplate, NotificationChannel } from '../../../types';
-// FIX: Corrected the import path for icons from '../../../components/icons' to '../../../components/icons/index' to resolve module loading error.
 import { SendIcon } from '../../../components/icons/index';
 
 interface NotificationFormProps {

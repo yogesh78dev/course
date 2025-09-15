@@ -1,5 +1,4 @@
 import React, { useState, useRef, DragEvent, ChangeEvent, useEffect } from 'react';
-// FIX: Corrected the import path for icons from '../icons' to '../icons/index' to resolve module loading error.
 import { UploadIcon, DeleteIcon } from '../icons/index';
 
 interface ImageUploadProps {

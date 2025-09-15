@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import * as api from '../../services/api';
 import { Course, CourseDetailsPayload, WatchHistoryMap, StudentReview, Certificate } from '../../types';
 import StudentHeader from '../../components/layout/StudentHeader';
-// FIX: Corrected the import path for icons from '../../components/icons' to '../../components/icons/index' to resolve module loading error.
 import { CheckIcon, StarIcon } from '../../components/icons/index';
 import Modal from '../../components/ui/Modal';
 

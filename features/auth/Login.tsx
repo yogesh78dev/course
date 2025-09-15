@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// FIX: Corrected the import path for icons from '../../components/icons' to '../../components/icons/index' to resolve module loading error.
 import { EmailIcon } from '../../components/icons/index';
 import * as api from '../../services/api';
 

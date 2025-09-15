@@ -8,10 +8,10 @@
 	"item": [
 		{
 			"name": "Authentication",
-			"description": "Endpoints for student registration and login.",
+			"description": "Endpoints for student registration (with OTP), login, and password management.",
 			"item": [
 				{
-					"name": "Register Student",
+					"name": "Step 1: Send Registration OTP",
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -25,20 +25,20 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/auth/register-student",
+							"raw": "{{baseUrl}}/auth/register-send-otp",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"auth",
-								"register-student"
+								"register-send-otp"
 							]
 						},
-						"description": "Registers a new student account. Returns the new user's details and a JWT token for authentication."
+						"description": "Checks if an email is available and sends a verification OTP. This is the first step in the email/password registration process."
 					},
 					"response": [
 						{
-							"name": "Successful Registration",
+							"name": "OTP Sent Successfully",
 							"originalRequest": {
 								"method": "POST",
 								"header": [],
@@ -47,18 +47,11 @@
 									"raw": "{\n    \"name\": \"New Student\",\n    \"email\": \"student@example.com\",\n    \"password\": \"password123\"\n}"
 								},
 								"url": {
-									"raw": "{{baseUrl}}/auth/register-student",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"auth",
-										"register-student"
-									]
+									"raw": "{{baseUrl}}/auth/register-send-otp"
 								}
 							},
-							"status": "Created",
-							"code": 201,
+							"status": "OK",
+							"code": 200,
 							"_postman_previewlanguage": "json",
 							"header": [
 								{
@@ -67,7 +60,96 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"message\": \"Student registration successful\",\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n        \"id\": \"usr-random-uuid\",\n        \"name\": \"New Student\",\n        \"email\": \"student@example.com\",\n        \"role\": \"Student\",\n        \"avatar_url\": \"https://picsum.photos/seed/1678886400/100\",\n        \"joined_date\": \"2024-07-28T00:00:00.000Z\"\n    }\n}"
+							"body": "{\n    \"message\": \"Verification OTP sent to your email.\"\n}"
+						},
+						{
+							"name": "Email Already Exists",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Existing Student\",\n    \"email\": \"alice@example.com\",\n    \"password\": \"password123\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/auth/register-send-otp"
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"message\": \"An account with this email already exists.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Step 2: Verify OTP and Create Account",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@example.com\",\n    \"otp\": \"123456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register-verify-and-create",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register-verify-and-create"
+							]
+						},
+						"description": "Verifies the OTP sent in Step 1. If valid, it creates the new student account and returns the user's details along with a JWT token for immediate login."
+					},
+					"response": [
+						{
+							"name": "Successful Verification & Creation",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"student@example.com\",\n    \"otp\": \"123456\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/auth/register-verify-and-create"
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Account verified and created successfully.\",\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n        \"id\": \"usr-random-uuid\",\n        \"name\": \"New Student\",\n        \"email\": \"student@example.com\",\n        \"role\": \"Student\",\n        \"avatar\": \"https://picsum.photos/seed/1678886400/100\",\n        \"joinedDate\": \"2024-07-28\"\n    }\n}"
+						},
+						{
+							"name": "Invalid OTP",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"student@example.com\",\n    \"otp\": \"000000\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/auth/register-verify-and-create"
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Invalid or expired OTP.\"\n}"
 						}
 					]
 				},
