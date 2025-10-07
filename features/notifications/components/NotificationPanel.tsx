@@ -20,7 +20,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ onClose }) => {
                 <button onClick={markAllAsRead} className="text-sm text-primary hover:underline">Mark all as read</button>
             </div>
             <div className="max-h-80 overflow-y-auto">
-                {notifications.map((notif: Notification) => (
+                {notifications?.map((notif: Notification) => (
                     <div key={notif.id} className={`p-3 border-b border-gray-100 hover:bg-gray-50 ${!notif.read ? 'bg-primary-50' : ''}`}>
                         <p className="text-sm text-gray-700">{notif.message}</p>
                         <p className="text-xs text-gray-500 mt-1">{notif.timestamp}</p>

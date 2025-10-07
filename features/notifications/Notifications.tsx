@@ -78,7 +78,7 @@ const Notifications: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
-                                    {notificationTemplates.map(template => (
+                                    {notificationTemplates?.map(template => (
                                         <tr key={template.id}>
                                             <td className="p-4 font-medium text-gray-900">{template.name}</td>
                                             <td className="p-4 text-gray-700 truncate max-w-xs" title={template.title}>{template.title}</td>
@@ -117,17 +117,15 @@ const Notifications: React.FC = () => {
                                         <th className="p-4 font-semibold text-sm text-gray-600">Title</th>
                                         <th className="p-4 font-semibold text-sm text-gray-600 max-w-sm">Message</th>
                                         <th className="p-4 font-semibold text-sm text-gray-600">Target</th>
-                                        <th className="p-4 font-semibold text-sm text-gray-600">Channels</th>
                                         <th className="p-4 font-semibold text-sm text-gray-600">Sent Date</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
-                                    {sentNotifications.map(notif => (
+                                    {sentNotifications?.map(notif => (
                                         <tr key={notif.id}>
                                             <td className="p-4 font-medium text-gray-900">{notif.title}</td>
                                             <td className="p-4 text-gray-700 max-w-sm truncate" title={notif.message}>{notif.message}</td>
                                             <td className="p-4 text-gray-700">{notif.target}</td>
-                                            <td className="p-4 text-gray-700 text-sm">{notif.channels.join(', ')}</td>
                                             <td className="p-4 text-gray-700">{notif.sentDate}</td>
                                         </tr>
                                     ))}

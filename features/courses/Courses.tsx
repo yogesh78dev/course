@@ -70,7 +70,7 @@ const Courses: React.FC = () => {
                     className="border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-300"
                 >
                     <option value="All">All Categories</option>
-                    {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+                    {categories?.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
                 </select>
             </div>
 
@@ -87,7 +87,7 @@ const Courses: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {filteredCourses.map(course => {
+                        {filteredCourses?.map(course => {
                             const { avg, count } = getAverageRating(course.id);
                             const instructor = instructors.find(i => i.id === course.instructorId);
                             return (

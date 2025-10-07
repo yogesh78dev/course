@@ -75,7 +75,7 @@ const Reviews: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {filteredReviews.map(review => {
+                        {filteredReviews?.map(review => {
                             const { user, course } = getReviewData(review);
                             if (!user || !course) return null;
 

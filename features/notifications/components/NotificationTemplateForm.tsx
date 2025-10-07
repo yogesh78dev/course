@@ -70,7 +70,7 @@ const NotificationTemplateForm: React.FC<NotificationTemplateFormProps> = ({ tem
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300"
                     >
                         <option value="" disabled>-- Select a course --</option>
-                        {courses.map(course => (
+                        {courses?.map(course => (
                             <option key={course.id} value={course.id}>{course.title}</option>
                         ))}
                     </select>
@@ -78,7 +78,7 @@ const NotificationTemplateForm: React.FC<NotificationTemplateFormProps> = ({ tem
             );
         }
         if (action.type === NotificationActionType.VIEW_COUPON) {
-            const activeCoupons = coupons.filter(c => new Date(c.endDate) >= new Date());
+            const activeCoupons = coupons?.filter(c => new Date(c.endDate) >= new Date());
             return (
                 <div>
                     <label htmlFor="actionPayload" className="block text-sm font-medium text-gray-700 mt-2 mb-1">Select Coupon</label>
@@ -89,7 +89,7 @@ const NotificationTemplateForm: React.FC<NotificationTemplateFormProps> = ({ tem
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300"
                     >
                         <option value="" disabled>-- Select a coupon --</option>
-                        {activeCoupons.map(coupon => (
+                        {activeCoupons?.map(coupon => (
                             <option key={coupon.id} value={coupon.id}>{coupon.code} - {coupon.type}</option>
                         ))}
                     </select>

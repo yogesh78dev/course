@@ -1,6 +1,6 @@
 import { Course, User, Instructor, Category, ReviewStatus, Coupon, NotificationTemplate, Sale, StudentReview, Review, Certificate } from "../types";
 
-// const API_URL = process.env.REACT_APP_API_URL || '/api'; // Use environment variable with a fallback
+// const API_URL = 'http://72.60.99.203:5000/api';
 const API_URL = 'http://localhost:5000/api';
 
 const getToken = () => localStorage.getItem('authToken');
@@ -59,9 +59,14 @@ export const deleteCourse = (id: string) => request(`/courses/${id}`, { method: 
 
 // Users
 export const getUsers = () => request('/users');
-export const createUser = (data: Omit<User, 'id' | 'avatar' | 'joinedDate' | 'enrolledCourses' | 'watchHistory'>) => request('/users', { method: 'POST', body: JSON.stringify(data) });
+export const createUser = (data: Partial<User>) => request('/users', { method: 'POST', body: JSON.stringify(data) });
 export const updateUser = (data: User) => request(`/users/${data.id}`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteUser = (id: string) => request(`/users/${id}`, { method: 'DELETE' });
+export const changePassword = (passwords: { currentPassword: string, newPassword: string }) => request('/users/change-password', {
+    method: 'POST',
+    body: JSON.stringify(passwords)
+});
+
 
 // Instructors
 export const getInstructors = () => request('/instructors');

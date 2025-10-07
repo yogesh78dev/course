@@ -52,7 +52,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                                     type="password"
                                     id="password"
                                     name="password"
-                                    defaultValue="password"
+                                    defaultValue="abc123"
                                     required
                                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-300 transition-all"
                                     placeholder="••••••••"

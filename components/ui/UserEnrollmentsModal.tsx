@@ -28,8 +28,8 @@ const UserEnrollmentsModal: React.FC<UserEnrollmentsModalProps> = ({ user, onClo
     return (
         <Modal isOpen={!!user} onClose={onClose} title={`Course Enrollments for ${user.name}`}>
             <div className="space-y-4">
-                {user.enrolledCourses.length > 0 ? (
-                    user.enrolledCourses.map(enrollment => {
+                {user.enrolledCourses?.length > 0 ? (
+                    user.enrolledCourses?.map(enrollment => {
                         const course = courses.find(c => c.id === enrollment.courseId);
                         if (!course) return null;
                         const status = getAccessStatus(enrollment.expiryDate);

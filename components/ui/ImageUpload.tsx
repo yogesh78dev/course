@@ -1,14 +1,15 @@
 import React, { useState, useRef, DragEvent, ChangeEvent, useEffect } from 'react';
-import { UploadIcon, DeleteIcon } from '../icons/index';
+import { UploadIcon, DeleteIcon, CameraIcon } from '../icons/index';
 
 interface ImageUploadProps {
     label: string;
     currentImageUrl: string;
     onFileChange: (dataUrl: string) => void;
-    aspectRatio?: string; // e.g., '16/9'
+    aspectRatio?: string;
+    shape?: 'square' | 'circle';
 }
 
-const ImageUpload: React.FC<ImageUploadProps> = ({ label, currentImageUrl, onFileChange, aspectRatio = '16/9' }) => {
+const ImageUpload: React.FC<ImageUploadProps> = ({ label, currentImageUrl, onFileChange, aspectRatio = '16/9', shape = 'square' }) => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -60,23 +61,27 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ label, currentImageUrl, onFil
         }
     }
 
+    const shapeClasses = shape === 'circle' ? 'rounded-full' : 'rounded-lg';
+    const finalAspectRatio = shape === 'circle' ? '1/1' : aspectRatio;
+
     return (
         <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
             <div
                 className={`
-                    relative w-full border-2 border-dashed rounded-lg p-2 transition-colors duration-200
+                    relative w-full border-2 border-dashed p-2 transition-colors duration-200
+                    ${shapeClasses}
                     ${isDragging ? 'border-primary bg-primary-50' : 'border-gray-300'}
                 `}
-                style={{ aspectRatio }}
+                style={{ aspectRatio: finalAspectRatio }}
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
                 onDrop={onDrop}
             >
                 {previewUrl ? (
                     <>
-                        <img src={previewUrl} alt="Preview" className="w-full h-full object-cover rounded-md" />
-                         <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 flex items-center justify-center transition-opacity duration-300 opacity-0 hover:opacity-100 rounded-md">
+                        <img src={previewUrl} alt="Preview" className={`w-full h-full object-cover ${shapeClasses}`} />
+                         <div className={`absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-50 flex items-center justify-center transition-opacity duration-300 opacity-0 hover:opacity-100 ${shapeClasses}`}>
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
@@ -96,12 +101,21 @@ const ImageUpload: React.FC<ImageUploadProps> = ({ label, currentImageUrl, onFil
                     </>
                 ) : (
                     <div
-                        className="w-full h-full flex flex-col items-center justify-center text-center text-gray-500 cursor-pointer"
+                        className={`w-full h-full flex flex-col items-center justify-center text-center text-gray-500 cursor-pointer ${shapeClasses} bg-gray-50 hover:bg-gray-100`}
                         onClick={() => fileInputRef.current?.click()}
                     >
-                        <UploadIcon className="w-8 h-8 text-gray-400 mb-2" />
-                        <p className="font-semibold">Click to upload or drag & drop</p>
-                        <p className="text-xs">PNG, JPG, GIF up to 10MB</p>
+                        {shape === 'circle' ? (
+                            <>
+                                <CameraIcon className="w-8 h-8 text-gray-400 mb-2" />
+                                <p className="font-semibold text-xs">Upload Photo</p>
+                            </>
+                        ) : (
+                            <>
+                                <UploadIcon className="w-8 h-8 text-gray-400 mb-2" />
+                                <p className="font-semibold">Click to upload or drag & drop</p>
+                                <p className="text-xs">PNG, JPG, GIF up to 10MB</p>
+                            </>
+                        )}
                     </div>
                 )}
                 <input

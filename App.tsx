@@ -1,32 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
-import Dashboard from './features/dashboard/Dashboard';
-import Courses from './features/courses/Courses';
-import Users from './features/users/Users';
-import Instructors from './features/instructors/Instructors';
-import SalesAnalytics from './features/sales/SalesAnalytics';
-import Settings from './features/settings/Settings';
-import Reviews from './features/reviews/Reviews';
-import Coupons from './features/coupons/Coupons';
-import Notifications from './features/notifications/Notifications';
-import Login from './features/auth/Login';
 import { useAppContext } from './context/AppContext';
-import PromotionPopup from './components/ui/PromotionPopup';
+import Login from './features/auth/Login';
 import StudentPortal from './features/student-portal/StudentPortal';
-import * as api from './services/api';
-import { UserRole } from './types';
+import StudentHeader from './components/layout/StudentHeader';
 
 export type View = 'Dashboard' | 'Courses' | 'Instructors' | 'Users' | 'Sales & Analytics' | 'Coupons' | 'Reviews' | 'Notifications' | 'Settings';
 
+const LoadingSpinner: React.FC = () => (
+    <div className="flex justify-center items-center h-full w-full">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
+    </div>
+);
+
+const DashboardView = React.lazy(() => import('./features/dashboard/Dashboard'));
+const CoursesView = React.lazy(() => import('./features/courses/Courses'));
+const UsersView = React.lazy(() => import('./features/users/Users'));
+const InstructorsView = React.lazy(() => import('./features/instructors/Instructors'));
+const SalesAnalyticsView = React.lazy(() => import('./features/sales/SalesAnalytics'));
+const SettingsView = React.lazy(() => import('./features/settings/Settings'));
+const ReviewsView = React.lazy(() => import('./features/reviews/Reviews'));
+const CouponsView = React.lazy(() => import('./features/coupons/Coupons'));
+const NotificationsView = React.lazy(() => import('./features/notifications/Notifications'));
+
 const App: React.FC = () => {
-    const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('authToken'));
     const [currentView, setCurrentView] = useState<View>('Dashboard');
+    const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('authToken'));
     const [isStudentView, setIsStudentView] = useState(false);
-    const { promotion, loading, fetchAllData, clearAllData, users, setCurrentStudent } = useAppContext();
+    const { fetchAllData, clearAllData, setCurrentStudent, users } = useAppContext();
 
     useEffect(() => {
-        if (isLoggedIn) {
+        if(isLoggedIn) {
             fetchAllData();
         }
     }, [isLoggedIn, fetchAllData]);
@@ -37,57 +42,42 @@ const App: React.FC = () => {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('authToken');
-        setIsLoggedIn(false);
-        setIsStudentView(false); // Exit student view on logout
-        clearAllData();
+        if (window.confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('authToken');
+            setIsLoggedIn(false);
+            setIsStudentView(false);
+            setCurrentStudent(null);
+            clearAllData();
+        }
     };
     
-    const toggleStudentView = async () => {
-      if (!isStudentView) {
-        // Find a sample student to view the portal as
-        const sampleStudent = users.find(u => u.role !== UserRole.ADMIN);
-        if (sampleStudent) {
-            try {
-                // For a true simulation, we fetch the full student profile including enrollments and history
-                const profileRes = await api.getStudentProfile(sampleStudent.id);
-                setCurrentStudent(profileRes.data);
-                setIsStudentView(true);
-            } catch (error) {
-                console.error("Failed to fetch student profile for simulation:", error);
-                alert("Could not load student profile data.");
-            }
+    const handleToggleStudentView = () => {
+        if (isStudentView) {
+            setIsStudentView(false);
+            setCurrentStudent(null);
         } else {
-            alert("No student users found to simulate the student view.");
+            const firstStudent = users.find(u => u.role !== 'Admin');
+            if (firstStudent) {
+                setCurrentStudent(firstStudent);
+                setIsStudentView(true);
+            } else {
+                alert("No student users found to switch to.");
+            }
         }
-      } else {
-          setCurrentStudent(null);
-          setIsStudentView(false);
-      }
     };
 
-    const renderAdminView = () => {
+    const renderView = () => {
         switch (currentView) {
-            case 'Dashboard':
-                return <Dashboard />;
-            case 'Courses':
-                return <Courses />;
-            case 'Instructors':
-                return <Instructors />;
-            case 'Users':
-                return <Users />;
-            case 'Sales & Analytics':
-                return <SalesAnalytics />;
-            case 'Coupons':
-                return <Coupons />;
-            case 'Reviews':
-                return <Reviews />;
-            case 'Notifications':
-                return <Notifications />;
-            case 'Settings':
-                return <Settings />;
-            default:
-                return <Dashboard />;
+            case 'Dashboard': return <DashboardView />;
+            case 'Courses': return <CoursesView />;
+            case 'Instructors': return <InstructorsView />;
+            case 'Users': return <UsersView setIsStudentView={setIsStudentView} />;
+            case 'Sales & Analytics': return <SalesAnalyticsView />;
+            case 'Coupons': return <CouponsView />;
+            case 'Reviews': return <ReviewsView />;
+            case 'Notifications': return <NotificationsView />;
+            case 'Settings': return <SettingsView />;
+            default: return <DashboardView />;
         }
     };
 
@@ -96,27 +86,31 @@ const App: React.FC = () => {
     }
 
     if (isStudentView) {
-        return <StudentPortal onLogout={handleLogout} onExitStudentView={toggleStudentView} />;
-    }
-    
-    if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center">
-                <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
+             <div className="flex h-screen bg-gray-100 text-gray-800">
+                <div className="flex-1 flex flex-col overflow-hidden">
+                    <StudentHeader onLogout={handleLogout} onExitStudentView={handleToggleStudentView} />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6 md:p-8">
+                        <Suspense fallback={<LoadingSpinner />}>
+                            <StudentPortal />
+                        </Suspense>
+                    </main>
+                </div>
             </div>
-        );
+        )
     }
 
     return (
         <div className="flex h-screen bg-gray-100 text-gray-800">
             <Sidebar currentView={currentView} setCurrentView={setCurrentView} onLogout={handleLogout} />
             <div className="flex-1 flex flex-col overflow-hidden">
-                <Header onToggleStudentView={toggleStudentView} onLogout={handleLogout}/>
+                <Header onToggleStudentView={handleToggleStudentView} onLogout={handleLogout} setCurrentView={setCurrentView} />
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6 md:p-8">
-                    {renderAdminView()}
+                    <Suspense fallback={<LoadingSpinner />}>
+                        {renderView()}
+                    </Suspense>
                 </main>
             </div>
-            {promotion.show && currentView === 'Dashboard' && <PromotionPopup />}
         </div>
     );
 };

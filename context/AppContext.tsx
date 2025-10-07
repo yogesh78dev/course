@@ -1,6 +1,13 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import { User, Course, Sale, Category, Notification, UserRole, Review, ReviewStatus, Coupon, SentNotification, NotificationTemplate, Instructor, Promotion } from '../types';
+import { User, Course, Sale, Category, Notification, UserRole, Review, ReviewStatus, Coupon, SentNotification, NotificationTemplate, Instructor } from '../types';
 import * as api from '../services/api';
+
+// FIX: Add Promotion interface for promotion popup state
+interface Promotion {
+    show: boolean;
+    title: string;
+    description: string;
+}
 
 interface AppContextType {
     courses: Course[];
@@ -44,14 +51,15 @@ interface AppContextType {
     updateNotificationTemplate: (template: NotificationTemplate) => Promise<void>;
     deleteNotificationTemplate: (id: string) => Promise<void>;
     updateSaleStatus: (saleId: string, status: Sale['status']) => Promise<void>;
-    promotion: Promotion;
-    setPromotion: React.Dispatch<React.SetStateAction<Promotion>>;
     currentStudent: User | null;
     setCurrentStudent: React.Dispatch<React.SetStateAction<User | null>>;
     loading: boolean;
     error: string | null;
     fetchAllData: () => Promise<void>;
     clearAllData: () => void;
+    // FIX: Add promotion and setPromotion to context type
+    promotion: Promotion;
+    setPromotion: React.Dispatch<React.SetStateAction<Promotion>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -75,12 +83,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [coupons, setCoupons] = useState<Coupon[]>([]);
     const [sentNotifications, setSentNotifications] = useState<SentNotification[]>([]);
     const [notificationTemplates, setNotificationTemplates] = useState<NotificationTemplate[]>([]);
-    const [currentStudent, setCurrentStudent] = useState<User | null>(null);
+    // FIX: Add state for promotion popup
     const [promotion, setPromotion] = useState<Promotion>({
         show: false,
-        title: '🎉 Summer Sale!',
-        description: 'Get 25% off on our top-rated courses. Use code SUMMER25 at checkout.',
+        title: 'Summer Sale!',
+        description: 'Get 25% off on all courses. Use code SUMMER25.'
     });
+    const [currentStudent, setCurrentStudent] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     
@@ -131,17 +140,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setNotificationTemplates([]);
         setCurrentStudent(null);
     };
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            if (localStorage.getItem('authToken') && !sessionStorage.getItem('promotionShown')) {
-                setPromotion(prev => ({ ...prev, show: true }));
-                sessionStorage.setItem('promotionShown', 'true');
-            }
-        }, 5000); 
-
-        return () => clearTimeout(timer);
-    }, []);
     
     // Wrapped API calls to update state
     const addCourse = async (courseData: Omit<Course, 'id'>) => {
@@ -256,10 +254,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             sendNotification,
             addNotificationTemplate, updateNotificationTemplate, deleteNotificationTemplate,
             updateSaleStatus,
-            promotion, setPromotion,
             currentStudent, setCurrentStudent,
             loading, error,
             fetchAllData, clearAllData,
+            // FIX: Provide promotion state and setter to context
+            promotion, setPromotion,
         }}>
             {children}
         </AppContext.Provider>

@@ -51,6 +51,15 @@ const getStudentProfile = asyncHandler(async (req, res) => {
     const [watchHistory] = await db.query(historyQuery, [studentId]);
     profile.watchHistory = watchHistory;
 
+    // 4. Calculate profile completion
+    let completion = 0;
+    if (profile.name) completion += 25; // Should always be present
+    if (profile.email) completion += 25; // Should always be present
+    if (profile.phoneNumber) completion += 25;
+    if (profile.avatar) completion += 25;
+    profile.profileCompletionPercentage = completion;
+
+
     res.json({ message: 'Successfully fetched student profile.', data: profile });
 });
 
@@ -381,6 +390,101 @@ const getMyCertificates = asyncHandler(async (req, res) => {
     res.json({ message: 'Successfully fetched your certificates.', data: certificates });
 });
 
+const getDashboardData = asyncHandler(async (req, res) => {
+    const studentId = req.user.id;
+
+    const inProgressQuery = `
+        SELECT c.id, c.title, c.poster_image_url as posterImageUrl, i.name as instructorName, e.completion_percentage as completionPercentage
+        FROM courses c
+        JOIN enrollments e ON c.id = e.course_id
+        LEFT JOIN instructors i ON c.instructor_id = i.id
+        WHERE e.user_id = ? AND e.completion_percentage > 0 AND e.completion_percentage < 100
+        ORDER BY e.updated_at DESC
+        LIMIT 3
+    `;
+    const [inProgressCourses] = await db.query(inProgressQuery, [studentId]);
+
+    const recentQuery = `
+        SELECT c.id, c.title, c.poster_image_url as posterImageUrl, i.name as instructorName, e.completion_percentage as completionPercentage
+        FROM courses c
+        JOIN enrollments e ON c.id = e.course_id
+        LEFT JOIN instructors i ON c.instructor_id = i.id
+        WHERE e.user_id = ?
+        ORDER BY e.enrollment_date DESC
+        LIMIT 3
+    `;
+    const [recentCourses] = await db.query(recentQuery, [studentId]);
+
+    const [[stats]] = await db.query(
+        `SELECT 
+            (SELECT COUNT(*) FROM enrollments WHERE user_id = ?) as totalCourses,
+            (SELECT COUNT(*) FROM certificates WHERE user_id = ?) as totalCertificates
+        `, [studentId, studentId]
+    );
+
+    res.json({
+        message: 'Successfully fetched dashboard data.',
+        data: {
+            inProgressCourses,
+            recentCourses,
+            stats: {
+                totalCourses: stats.totalCourses || 0,
+                totalCertificates: stats.totalCertificates || 0
+            }
+        }
+    });
+});
+
+const getCertificateDetails = asyncHandler(async (req, res) => {
+    const studentId = req.user.id;
+    const { id: certificateId } = req.params;
+    
+    const query = `
+        SELECT 
+            cer.id, cer.certificate_code as certificateCode, DATE_FORMAT(cer.issue_date, '%Y-%m-%d') as issueDate,
+            u.name as studentName,
+            c.title as courseTitle,
+            i.name as instructorName
+        FROM certificates cer
+        JOIN users u ON cer.user_id = u.id
+        JOIN courses c ON cer.course_id = c.id
+        JOIN instructors i ON c.instructor_id = i.id
+        WHERE cer.id = ? AND cer.user_id = ?
+    `;
+
+    const [certificateRows] = await db.query(query, [certificateId, studentId]);
+
+    if (certificateRows.length === 0) {
+        return res.status(404).json({ message: 'Certificate not found or you do not have permission to view it.' });
+    }
+
+    res.json({ message: 'Successfully fetched certificate details.', data: certificateRows[0] });
+});
+
+const registerPushToken = asyncHandler(async (req, res) => {
+    const { token, deviceType } = req.body;
+    const studentId = req.user.id;
+
+    if (!token || !deviceType) {
+        return res.status(400).json({ message: 'Device token and type are required.' });
+    }
+
+    if (!['android', 'ios', 'web'].includes(deviceType)) {
+        return res.status(400).json({ message: 'Invalid device type.' });
+    }
+
+    const tokenId = uuidv4();
+    const query = `
+        INSERT INTO push_notification_tokens (id, user_id, token, device_type)
+        VALUES (?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE token = VALUES(token), device_type = VALUES(device_type), updated_at = NOW()
+    `;
+
+    await db.query(query, [tokenId, studentId, token, deviceType]);
+    
+    res.status(200).json({ message: 'Push notification token registered successfully.' });
+});
+
 module.exports = { 
     getStudentProfile, 
     updateStudentProfile, 
@@ -391,5 +495,8 @@ module.exports = {
     getMyNotifications,
     getEnrolledCourseDetails,
     claimCertificate,
-    getMyCertificates
+    getMyCertificates,
+    getDashboardData,
+    getCertificateDetails,
+    registerPushToken
 };

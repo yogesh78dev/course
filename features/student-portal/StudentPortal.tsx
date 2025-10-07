@@ -21,7 +21,7 @@ const StudentDashboard: React.FC<{ onSelectCourse: (id: string) => void; courses
             </div>
             {courses.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {courses.map(course => (
+                    {courses?.map(course => (
                         <div key={course.id} onClick={() => onSelectCourse(course.id)} className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden group transform hover:-translate-y-1 transition-transform duration-300 cursor-pointer">
                             <img src={course.posterImageUrl} alt={course.title} className="w-full h-40 object-cover" />
                             <div className="p-5">
@@ -183,11 +183,11 @@ const CoursePlayer: React.FC<{ courseId: string; onBack: () => void; }> = ({ cou
             </div>
             <div className="lg:col-span-1 bg-white p-4 rounded-lg border max-h-[80vh] overflow-y-auto">
                 <h2 className="text-xl font-bold mb-4">Course Content</h2>
-                {details.course.modules.map(module => (
+                {details.course.modules?.map(module => (
                     <div key={module.id} className="mb-4">
                         <h3 className="font-bold bg-gray-100 p-2 rounded">{module.title}</h3>
                         <ul className="mt-2 space-y-1">
-                            {module.lessons.map(lesson => {
+                            {module.lessons?.map(lesson => {
                                 const isCompleted = (watchHistoryMap[lesson.id]?.progress || 0) === 100;
                                 return (
                                     <li key={lesson.id} className="flex items-center justify-between p-2 rounded hover:bg-gray-50 cursor-pointer">
@@ -229,7 +229,7 @@ const CertificatesView: React.FC = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-8">My Certificates</h1>
              {certificates.length > 0 ? (
                 <div className="space-y-4">
-                    {certificates.map(cert => (
+                    {certificates?.map(cert => (
                         <div key={cert.id} className="bg-white p-4 rounded-lg border shadow-sm flex justify-between items-center">
                             <div>
                                 <h3 className="font-bold text-lg text-gray-900">{cert.courseTitle}</h3>

@@ -129,7 +129,7 @@ const Users: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {filteredUsers.map(user => (
+                        {filteredUsers?.map(user => (
                             <tr key={user.id}>
                                 <td className="p-4 flex items-center sticky left-0 bg-white z-10 border-r border-gray-200">
                                     <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover mr-4 flex-shrink-0"/>

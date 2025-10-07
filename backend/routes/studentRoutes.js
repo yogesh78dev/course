@@ -10,7 +10,10 @@ const {
     getMyNotifications,
     getEnrolledCourseDetails,
     claimCertificate,
-    getMyCertificates
+    getMyCertificates,
+    getDashboardData,
+    getCertificateDetails,
+    registerPushToken
 } = require('../controllers/studentController');
 const { protect, isStudent, admin } = require('../middlewares/authMiddleware');
 
@@ -19,10 +22,15 @@ const router = express.Router();
 // All subsequent routes in this file are for logged-in students
 router.use(protect, isStudent);
 
+// Dashboard
+router.get('/dashboard', getDashboardData);
+
 // Profile routes
 router.route('/me')
     .get(getStudentProfile)
     .put(updateStudentProfile);
+
+router.post('/me/push-token', registerPushToken);
 
 // Course and progress routes
 router.get('/my-courses', getEnrolledCourses);
@@ -39,5 +47,6 @@ router.get('/my-notifications', getMyNotifications);
 // Certificate routes
 router.post('/my-courses/:courseId/claim-certificate', claimCertificate);
 router.get('/my-certificates', getMyCertificates);
+router.get('/my-certificates/:id/details', getCertificateDetails);
 
 module.exports = router;

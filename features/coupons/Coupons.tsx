@@ -64,7 +64,7 @@ const Coupons: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {coupons.map(coupon => {
+                        {coupons?.map(coupon => {
                             const status = getStatus(coupon);
                             return (
                                 <tr key={coupon.id}>

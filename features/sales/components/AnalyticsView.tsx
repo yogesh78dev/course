@@ -29,7 +29,7 @@ const AnalyticsView: React.FC = () => {
     const bestSellingCourses = useMemo(() => {
         const courseSales: { [key: string]: { salesCount: number, revenue: number } } = {};
 
-        sales.forEach(sale => {
+        sales?.forEach(sale => {
             const courseId = sale.course.id;
             if (!courseSales[courseId]) {
                 courseSales[courseId] = { salesCount: 0, revenue: 0 };
@@ -141,7 +141,7 @@ const AnalyticsView: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {bestSellingCourses.map(course => (
+                            {bestSellingCourses?.map(course => (
                                 <tr key={course.id}>
                                     <td className="p-4 font-medium text-gray-800">{course.title}</td>
                                     <td className="p-4 text-gray-700 text-right">{course.salesCount.toLocaleString()}</td>
@@ -179,7 +179,7 @@ const AnalyticsView: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {coupons.map(coupon => (
+                            {coupons?.map(coupon => (
                                 <tr key={coupon.id}>
                                     <td className="p-4"><span className="font-mono bg-gray-100 text-gray-800 text-sm font-medium px-2 py-1 rounded">{coupon.code}</span></td>
                                     <td className="p-4 text-gray-700">{coupon.type}</td>

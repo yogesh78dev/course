@@ -15,7 +15,10 @@ const StudentHeader: React.FC<StudentHeaderProps> = ({ onLogout, onExitStudentVi
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0">
             <div className="flex items-center space-x-4">
                 <h1 className="text-2xl font-bold text-primary">CourseAdmin</h1>
-                <button onClick={onExitStudentView} className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-md hover:bg-gray-200">
+                <span className="text-sm font-semibold text-yellow-800 bg-yellow-100 px-3 py-1 rounded-full">
+                    Student View
+                </span>
+                 <button onClick={onExitStudentView} className="text-sm font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-md hover:bg-gray-200">
                     Exit Student View
                 </button>
             </div>

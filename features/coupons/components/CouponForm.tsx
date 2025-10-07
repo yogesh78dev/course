@@ -127,7 +127,7 @@ const CouponForm: React.FC<CouponFormProps> = ({ coupon, onSave }) => {
                      <div>
                         <p className="font-medium text-gray-700 mb-2">Apply to specific courses (optional):</p>
                         <div className="max-h-32 overflow-y-auto space-y-2 pr-2">
-                             {courses.map(course => (
+                             {courses?.map(course => (
                                 <div key={course.id} className="relative flex items-start">
                                     <div className="flex items-center h-5">
                                         <input 

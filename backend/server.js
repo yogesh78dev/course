@@ -16,6 +16,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const purchaseRoutes = require('./routes/purchaseRoutes');
+const promotionRoutes = require('./routes/promotionRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -39,6 +40,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/student/purchase', purchaseRoutes);
+app.use('/api/promotions', promotionRoutes);
 
 // Basic route
 app.get('/', (req, res) => {

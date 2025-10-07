@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ChangeEvent, DragEvent, useRef } from 'react';
+import React, { useState, useEffect, ChangeEvent, DragEvent, useRef, useCallback } from 'react';
 import { Course, Module, Lesson } from '../../../types';
 import { useAppContext } from '../../../context/AppContext';
 import Modal from '../../../components/ui/Modal';
@@ -79,7 +79,7 @@ const LessonForm: React.FC<LessonFormProps> = ({ lesson, onSave }) => {
                     <label htmlFor="contentUrl" className="block text-sm font-medium text-gray-700 mb-1">Vimeo Video</label>
                     <select id="contentUrl" name="contentUrl" value={formData.contentUrl} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
                         <option value="">-- Select a video --</option>
-                        {vimeoVideos.map(vid => <option key={vid.id} value={vid.url}>{vid.title}</option>)}
+                        {vimeoVideos?.map(vid => <option key={vid.id} value={vid.url}>{vid.title}</option>)}
                     </select>
                 </div>
             )}
@@ -133,11 +133,17 @@ type DropIndicator = { moduleIndex: number; lessonIndex?: number; position: 'top
 const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
     const { categories, vimeoVideos, addCourse, updateCourse, instructors } = useAppContext();
     const [activeTab, setActiveTab] = useState<Tab>('info');
-    const [formData, setFormData] = useState<Omit<Course, 'id'>>({
-        title: '', description: '', price: 0, category: categories[0]?.name || '',
-        duration: '', instructorId: instructors[0]?.id || '', posterImageUrl: '', bannerImageUrl: '',
-        introVideoUrl: '', modules: [], accessType: 'lifetime', accessDuration: null, enableCertificate: false
-    });
+    
+    const getInitialFormData = useCallback(() => ({
+        title: '', description: '', price: 0,
+        category: categories?.[0]?.name || '',
+        duration: '',
+        instructorId: instructors?.[0]?.id || '',
+        posterImageUrl: '', bannerImageUrl: '',
+        introVideoUrl: '', modules: [], accessType: 'lifetime' as 'lifetime' | 'expiry', accessDuration: null, enableCertificate: false
+    }), [categories, instructors]);
+    
+    const [formData, setFormData] = useState<Omit<Course, 'id'>>(getInitialFormData());
 
     const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
     const [editingLessonInfo, setEditingLessonInfo] = useState<{ module: Module, lesson?: Lesson } | null>(null);
@@ -145,13 +151,17 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
     const draggedItem = useRef<DraggedItem | null>(null);
     const [dropIndicator, setDropIndicator] = useState<DropIndicator | null>(null);
 
-    useEffect(() => { if (course) setFormData(course); }, [course]);
-    
     useEffect(() => {
-        if (!course && instructors.length > 0) {
-            setFormData(prev => ({...prev, instructorId: prev.instructorId || instructors[0].id}));
+        if (course) {
+            setFormData({
+                ...course,
+                modules: course.modules || [], // Ensure modules is always an array
+            });
+        } else {
+            setFormData(getInitialFormData());
         }
-    }, [instructors, course]);
+    }, [course, getInitialFormData]);
+    
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
@@ -327,12 +337,12 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
                             <InputField label="Price (₹)" name="price" type="number" value={formData.price} onChange={handleChange} />
                             <InputField label="Category" name="category" value={formData.category} onChange={handleChange}>
                                 <select id="category" name="category" value={formData.category} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
-                                    {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+                                    {categories?.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
                                 </select>
                             </InputField>
                             <InputField label="Instructor" name="instructorId" value={formData.instructorId} onChange={handleChange}>
                                 <select id="instructorId" name="instructorId" value={formData.instructorId} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
-                                    {instructors.map(inst => <option key={inst.id} value={inst.id}>{inst.name}</option>)}
+                                    {instructors?.map(inst => <option key={inst.id} value={inst.id}>{inst.name}</option>)}
                                 </select>
                             </InputField>
                             <InputField label="Duration (e.g., 10 hours)" name="duration" value={formData.duration} onChange={handleChange} />
@@ -388,14 +398,14 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
                         <InputField label="Intro Video" name="introVideoUrl" value={formData.introVideoUrl} onChange={handleChange}>
                             <select id="introVideoUrl" name="introVideoUrl" value={formData.introVideoUrl} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
                                 <option value="">-- Select a video --</option>
-                                {vimeoVideos.map(vid => <option key={vid.id} value={vid.url}>{vid.title}</option>)}
+                                {vimeoVideos?.map(vid => <option key={vid.id} value={vid.url}>{vid.title}</option>)}
                             </select>
                         </InputField>
                     </div>
                 )}
                 {activeTab === 'curriculum' && (
                     <div className="space-y-4 p-4 bg-gray-50 rounded-lg border max-h-[60vh] overflow-y-auto">
-                        {formData.modules.map((module, mIndex) => (
+                        {formData.modules?.map((module, mIndex) => (
                             <div key={module.id}>
                                 <DropZone moduleIndex={mIndex} lessonIndex={undefined} />
                                 <div className="bg-white p-3 rounded-md border shadow-sm group" onDragOver={(e) => handleDragOver(e, mIndex)}>
@@ -407,7 +417,7 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
                                         <button type="button" onClick={() => deleteModule(module.id)} className="p-1 text-red-500 hover:bg-red-100 rounded-full ml-2 opacity-0 group-hover:opacity-100 transition-opacity"><DeleteIcon className="w-4 h-4" /></button>
                                     </div>
                                     <div className="mt-2 space-y-1 pl-4 border-l-2 ml-2">
-                                        {module.lessons.map((lesson, lIndex) => (
+                                        {module.lessons?.map((lesson, lIndex) => (
                                             <div key={lesson.id} >
                                                 <DropZone moduleIndex={mIndex} lessonIndex={lIndex} />
                                                 <div className="flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-2 rounded group/lesson" draggable onDragStart={(e) => handleDragStart(e, { type: 'lesson', moduleIndex: mIndex, lessonIndex: lIndex })} onDragEnd={handleDragEnd} onDragOver={(e) => handleDragOver(e, mIndex, lIndex)}>

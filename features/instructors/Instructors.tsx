@@ -47,7 +47,7 @@ const Instructors: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {instructors.map(instructor => (
+                        {instructors?.map(instructor => (
                             <tr key={instructor.id}>
                                 <td className="p-4 flex items-center">
                                     <img src={instructor.avatar} alt={instructor.name} className="w-10 h-10 rounded-full object-cover mr-4"/>

@@ -27,6 +27,9 @@ export interface User {
   avatar: string;
   enrolledCourses: Enrollment[];
   watchHistory: WatchHistoryEntry[];
+  // FIX: Added missing properties to conform to usage in UserForm and Users view.
+  phoneNumber?: string;
+  status: 'Active' | 'Inactive';
 }
 
 export interface Category {
@@ -73,6 +76,9 @@ export interface Course {
   introVideoUrl: string;
   accessType: 'lifetime' | 'expiry';
   accessDuration: number | null; // in days
+  // FIX: Added missing properties to conform to usage in CourseForm and other components.
+  instructorName?: string;
+  enableCertificate: boolean;
 }
 
 export interface Sale {
@@ -166,12 +172,6 @@ export interface SentNotification {
     sentDate: string;
     channels: NotificationChannel[];
 }
-// FIX: Add Promotion interface to be used for the promotion popup.
-export interface Promotion {
-    show: boolean;
-    title: string;
-    description: string;
-}
 
 // Student-specific types for mobile app functionality
 export interface StudentReview {
@@ -187,4 +187,15 @@ export interface CourseDetailsPayload {
     course: Course;
     watchHistory: { lessonId: string; progress: number }[];
     myReview: StudentReview | null;
+}
+
+// FIX: Add Certificate interface to be used for certificate related APIs.
+export interface Certificate {
+  id: string;
+  certificateCode: string;
+  issueDate: string;
+  userId?: string;
+  courseId?: string;
+  courseTitle?: string;
+  instructorName?: string;
 }

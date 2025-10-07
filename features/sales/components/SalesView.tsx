@@ -77,7 +77,7 @@ const SalesView: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {sales.map(sale => (
+                        {sales?.map(sale => (
                             <tr key={sale.id}>
                                 <td className="p-4 text-gray-700 font-mono text-sm">{sale.id}</td>
                                 <td className="p-4 text-gray-700">{sale.user.name}</td>

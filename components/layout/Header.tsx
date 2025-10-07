@@ -3,19 +3,38 @@ import { SearchIcon, BellIcon, ChevronDownIcon } from '../icons/index';
 import NotificationPanel from '../../features/notifications/components/NotificationPanel';
 import { useAppContext } from '../../context/AppContext';
 import { UserRole } from '../../types';
+import { View } from '../../App';
 
 interface HeaderProps {
     onToggleStudentView: () => void;
     onLogout: () => void;
+    setCurrentView: (view: View) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onToggleStudentView, onLogout }) => {
+const Header: React.FC<HeaderProps> = ({ onToggleStudentView, onLogout, setCurrentView }) => {
     const [showNotifications, setShowNotifications] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const { notifications, users } = useAppContext();
     
     const adminUser = users.find(u => u.role === UserRole.ADMIN);
     const unreadCount = notifications.filter(n => !n.read).length;
+    
+    const handleMenuClick = (action: 'profile' | 'settings' | 'studentView' | 'logout') => {
+        setShowProfileMenu(false);
+        switch(action) {
+            case 'settings':
+            case 'profile':
+                setCurrentView('Settings');
+                break;
+            case 'studentView':
+                onToggleStudentView();
+                break;
+            case 'logout':
+                onLogout();
+                break;
+        }
+    };
+
 
     return (
         <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0">
@@ -56,12 +75,13 @@ const Header: React.FC<HeaderProps> = ({ onToggleStudentView, onLogout }) => {
                     </button>
                     {showProfileMenu && (
                          <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-200">
-                             <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
-                             <button onClick={onToggleStudentView} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                             <button onClick={() => handleMenuClick('profile')} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</button>
+                              {/* <button onClick={() => handleMenuClick('settings')} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</button> */}
+                             <button onClick={() => handleMenuClick('studentView')} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 Switch to Student View
                              </button>
                              <div className="border-t border-gray-100 my-1"></div>
-                             <button onClick={onLogout} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Logout</button>
+                             <button onClick={() => handleMenuClick('logout')} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Logout</button>
                          </div>
                     )}
                 </div>

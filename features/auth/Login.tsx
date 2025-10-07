@@ -8,7 +8,7 @@ interface LoginViewProps {
 
 const Login: React.FC<LoginViewProps> = ({ onLogin }) => {
     const [email, setEmail] = useState('admin@example.com');
-    const [password, setPassword] = useState('password');
+    const [password, setPassword] = useState('abc123');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 

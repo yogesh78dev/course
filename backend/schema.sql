@@ -238,8 +238,8 @@ CREATE TABLE sent_notifications (
 -- SEED DATA
 -- =============================================
 
--- Default password for all users is 'password'
-SET @password_hash = '$2a$10$e.kYDx0J8e3c.09117a2.uD1oT8iUfJ/8R.bShswAX08RCAPM2v2';
+-- Default password for all users is 'password123'
+SET @password_hash = '$2a$10$eOkn.blb2nUKwGkQz.Noo.W5sYf7d9U/I8lORpSCA2kCj9x3t6Y5K';
 
 INSERT INTO categories (id, name) VALUES
 ('cat-1', 'Web Development'),
@@ -299,7 +299,7 @@ INSERT INTO enrollments (id, user_id, course_id, enrollment_date, expiry_date, c
 ('enr-1', 'usr-1', 'crs-1', '2023-05-10', NULL, 0),
 ('enr-2', 'usr-2', 'crs-2', '2023-05-12', '2024-05-11', 0),
 ('enr-3', 'usr-1', 'crs-4', '2023-05-18', '2023-11-14', 100),
-('enr-4', 'usr-2', 'crs-1', '2023-05-19', NULL, 50);
+('enr-4', 'usr-2', 'crs-1', '2023-05-19', 50);
 
 INSERT INTO watch_history (id, user_id, lesson_id, progress_percentage, watched_at, updated_at) VALUES
 ('wh-1', 'usr-2', 'les-1', 100, '2023-06-10 10:00:00', '2023-06-10 10:00:00'),
@@ -323,3 +323,36 @@ INSERT INTO sent_notifications (id, title, message, target, action_type, action_
 INSERT INTO notification_templates (id, name, title, message, target, action_type, action_payload) VALUES
 ('tpl-1', 'New Course Announcement', '🚀 New Course Alert!', 'A brand new course has just been launched. Check it out now!', 'All Users', 'View Course', 'crs-4'),
 ('tpl-2', 'Weekly Coupon Reminder', '💸 Don''t Miss Out!', 'Your weekly discount is here. Use the code to get a special offer.', 'Gold Members', 'View Coupon', 'cpn-1');
+
+-- =============================================
+-- ADDED FOR MOBILE APP V2
+-- =============================================
+
+-- Promotions table for displaying a banner/popup in the mobile app
+CREATE TABLE promotions (
+    id CHAR(36) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    image_url VARCHAR(255),
+    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    action_type ENUM('None', 'View Course', 'View Coupon') DEFAULT 'None',
+    action_payload VARCHAR(255), -- e.g., course_id or coupon_id
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Push notification tokens for sending push notifications via services like FCM
+CREATE TABLE push_notification_tokens (
+    id CHAR(36) PRIMARY KEY,
+    user_id CHAR(36) NOT NULL,
+    token TEXT NOT NULL,
+    device_type ENUM('android', 'ios', 'web') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY `user_token_unique` (`user_id`, `token`(255)),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Seed data for promotions
+INSERT INTO promotions (id, title, description, image_url, is_active, action_type, action_payload) VALUES
+('promo-1', 'Mid-Year Mega Sale!', 'Get up to 50% off on all Data Science courses. Limited time offer!', 'https://picsum.photos/seed/promo/800/400', TRUE, 'View Coupon', 'cpn-1');

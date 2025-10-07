@@ -457,6 +457,77 @@
 			]
 		},
 		{
+			"name": "Public Promotion",
+			"description": "Endpoint for fetching the currently active promotion for display in the app.",
+			"item": [
+				{
+					"name": "Get Active Promotion",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/promotions/public/active",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"promotions",
+								"public",
+								"active"
+							]
+						},
+						"description": "Retrieves the single promotion currently marked as active by the admin. The app can use this to display a promotional banner on the home screen. Returns null if no promotion is active."
+					},
+					"response": [
+						{
+							"name": "Active Promotion Found",
+							"originalRequest": {},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Successfully fetched active promotion.\",\n    \"data\": {\n        \"id\": \"promo-1\",\n        \"title\": \"Mid-Year Mega Sale!\",\n        \"description\": \"Get up to 50% off on all Data Science courses. Limited time offer!\",\n        \"imageUrl\": \"https://picsum.photos/seed/promo/800/400\",\n        \"actionType\": \"View Coupon\",\n        \"actionPayload\": \"cpn-1\"\n    }\n}"
+						},
+						{
+							"name": "No Active Promotion",
+							"originalRequest": {},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Successfully fetched active promotion.\",\n    \"data\": null\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Student Dashboard",
+			"item": [
+				{
+					"name": "Get Dashboard Data",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/student/dashboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"dashboard"
+							]
+						},
+						"description": "Retrieves aggregated data for the student's main dashboard or home screen. This is an optimized endpoint to reduce multiple API calls on app launch. It includes in-progress courses, recently enrolled courses, and general stats. Requires Bearer token."
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Public Course Discovery",
 			"description": "Endpoints for browsing courses without authentication.",
 			"item": [
@@ -688,9 +759,38 @@
 								"me"
 							]
 						},
-						"description": "Retrieves the complete profile of the currently logged-in student, including their enrollments and watch history. Requires Bearer token."
+						"description": "Retrieves the complete profile of the currently logged-in student, including their enrollments, watch history, and a calculated profile completion percentage. Requires Bearer token."
 					},
-					"response": []
+					"response": [
+						{
+							"name": "Default",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/student/me",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"student",
+										"me"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Successfully fetched student profile.\",\n    \"data\": {\n        \"id\": \"usr-1\",\n        \"name\": \"Alice Johnson\",\n        \"email\": \"alice@example.com\",\n        \"role\": \"Gold Member\",\n        \"avatar\": \"https://picsum.photos/seed/alice/100\",\n        \"joinedDate\": \"2023-01-15\",\n        \"phoneNumber\": \"123-456-7890\",\n        \"status\": \"Active\",\n        \"enrolledCourses\": [],\n        \"watchHistory\": [],\n        \"profileCompletionPercentage\": 100\n    }\n}"
+						}
+					]
 				},
 				{
 					"name": "Update My Profile",
@@ -765,6 +865,56 @@
 							],
 							"cookie": [],
 							"body": "{\n    \"message\": \"Profile updated successfully.\",\n    \"data\": {\n        \"id\": \"usr-1\",\n        \"name\": \"Updated Student Name\",\n        \"email\": \"alice@example.com\",\n        \"role\": \"Gold Member\",\n        \"avatar\": \"http://localhost:5000/uploads/avatars/b1a2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6.jpeg\",\n        \"phoneNumber\": \"555-123-4567\",\n        \"status\": \"Active\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Register Push Notification Token",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{studentAuthToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"token\": \"bk3RNwTe3H0:CI2k_HHwgIpoDKCIZhe...\",\n    \"deviceType\": \"android\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/student/me/push-token",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"me",
+								"push-token"
+							]
+						},
+						"description": "Registers or updates the device's push notification token (e.g., from FCM or APNS) for the currently logged-in student. The backend will use this token to send push notifications. The `deviceType` should be one of 'android', 'ios', or 'web'. Requires Bearer token."
+					},
+					"response": [
+						{
+							"name": "Token Registered",
+							"originalRequest": {},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"message\": \"Push notification token registered successfully.\"\n}"
 						}
 					]
 				}
@@ -979,6 +1129,73 @@
 							]
 						},
 						"description": "Retrieves a list of notifications targeted to the currently logged-in student (e.g., for 'All Users', 'Students', or 'Gold Members'). Requires Bearer token."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Certificates",
+			"description": "Authenticated endpoints for managing and viewing course certificates.",
+			"item": [
+				{
+					"name": "Claim Certificate",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/student/my-courses/crs-4/claim-certificate",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"my-courses",
+								"crs-4",
+								"claim-certificate"
+							]
+						},
+						"description": "Claims a certificate for a completed course. The API will validate that the course is 100% complete, offers a certificate, and hasn't been claimed already. Requires Bearer token."
+					},
+					"response": []
+				},
+				{
+					"name": "Get My Certificates",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/student/my-certificates",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"my-certificates"
+							]
+						},
+						"description": "Retrieves a list of all certificates earned by the currently logged-in student. Requires Bearer token."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Certificate Details",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/student/my-certificates/cert-1/details",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"student",
+								"my-certificates",
+								"cert-1",
+								"details"
+							]
+						},
+						"description": "Retrieves all the necessary details for a single, specific certificate (by its ID). This data can be used by the client to render a visual representation of the certificate for viewing or downloading as a PDF. Requires Bearer token."
 					},
 					"response": []
 				}
