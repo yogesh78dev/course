@@ -38,6 +38,7 @@ export const initialCourses: Course[] = [
         introVideoUrl: 'https://vimeo.com/123456',
         accessType: 'lifetime',
         accessDuration: null,
+        enableCertificate:false,
         modules: [
             { id: 'mod-1', title: 'Module 1: Introduction', lessons: [
                 { id: 'les-1', title: 'What is React?', type: 'video', contentUrl: 'https://vimeo.com/123456', duration: 15, description: 'An introduction to the React library and its core concepts.', tags: ['react', 'beginner'], attachmentUrl: '' },
@@ -63,6 +64,7 @@ export const initialCourses: Course[] = [
         introVideoUrl: 'https://vimeo.com/234567',
         accessType: 'expiry',
         accessDuration: 365,
+        enableCertificate:false,
         modules: [
              { id: 'mod-3', title: 'Module 1: Python Fundamentals', lessons: [
                 { id: 'les-6', title: 'Introduction to Python', type: 'video', contentUrl: 'https://vimeo.com/234567', duration: 30, description: 'Get started with the basics of Python programming.', tags: ['python', 'basics'], attachmentUrl: '' },
@@ -81,6 +83,7 @@ export const initialCourses: Course[] = [
         bannerImageUrl: 'https://picsum.photos/seed/design-banner/1000/300',
         introVideoUrl: 'https://vimeo.com/345678',
         accessType: 'lifetime',
+        enableCertificate:false,
         accessDuration: null,
         modules: []
     },
@@ -96,19 +99,20 @@ export const initialCourses: Course[] = [
         bannerImageUrl: 'https://picsum.photos/seed/marketing-banner/1000/300',
         introVideoUrl: '',
         accessType: 'expiry',
+        enableCertificate:false,
         accessDuration: 180,
         modules: []
     },
 ];
 
 export const initialUsers: User[] = [
-    { id: 'usr-1', name: 'Alice Johnson', email: 'alice@example.com', role: UserRole.GOLD_MEMBER, joinedDate: '2023-01-15', avatar: 'https://picsum.photos/seed/alice/100', enrolledCourses: [], watchHistory: [] },
-    { id: 'usr-2', name: 'Bob Williams', email: 'bob@example.com', role: UserRole.STUDENT, joinedDate: '2023-02-20', avatar: 'https://picsum.photos/seed/bob/100', enrolledCourses: [], watchHistory: [
+    { id: 'usr-1', name: 'Alice Johnson', email: 'alice@example.com',phoneNumber:"",status:"Active", role: UserRole.GOLD_MEMBER, joinedDate: '2023-01-15', avatar: 'https://picsum.photos/seed/alice/100', enrolledCourses: [], watchHistory: [] },
+    { id: 'usr-2', name: 'Bob Williams', email: 'bob@example.com',phoneNumber:"",status:"Active", role: UserRole.STUDENT, joinedDate: '2023-02-20', avatar: 'https://picsum.photos/seed/bob/100', enrolledCourses: [], watchHistory: [
         { courseId: 'crs-1', lessonId: 'les-1', watchedAt: '2023-06-10T10:00:00Z', progress: 100 },
         { courseId: 'crs-1', lessonId: 'les-3', watchedAt: '2023-06-11T11:30:00Z', progress: 50 },
     ]},
-    { id: 'usr-3', name: 'Charlie Brown', email: 'charlie@example.com', role: UserRole.STUDENT, joinedDate: '2023-03-10', avatar: 'https://picsum.photos/seed/charlie/100', enrolledCourses: [], watchHistory: [] },
-    { id: 'usr-4', name: 'Admin User', email: 'admin@example.com', role: UserRole.ADMIN, joinedDate: '2022-12-01', avatar: 'https://picsum.photos/seed/admin/100', enrolledCourses: [], watchHistory: [] },
+    { id: 'usr-3', name: 'Charlie Brown', email: 'charlie@example.com',phoneNumber:"",status:"Active", role: UserRole.STUDENT, joinedDate: '2023-03-10', avatar: 'https://picsum.photos/seed/charlie/100', enrolledCourses: [], watchHistory: [] },
+    { id: 'usr-4', name: 'Admin User', email: 'admin@example.com',phoneNumber:"",status:"Active", role: UserRole.ADMIN, joinedDate: '2022-12-01', avatar: 'https://picsum.photos/seed/admin/100', enrolledCourses: [], watchHistory: [] },
 ];
 
 export const initialSales: Sale[] = [

@@ -6,6 +6,7 @@ import NotificationTemplateForm from './components/NotificationTemplateForm';
 import { NotificationTemplate } from '../../types';
 import { EditIcon, DeleteIcon, PlusIcon } from '../../components/icons/index';
 import Tooltip from '../../components/ui/Tooltip';
+import ConfirmationModal from '../../components/ui/ConfirmationModal';
 
 type NotificationTab = 'Compose' | 'Templates' | 'History';
 
@@ -15,6 +16,7 @@ const Notifications: React.FC = () => {
     const [templateToLoad, setTemplateToLoad] = useState<NotificationTemplate | null>(null);
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState<NotificationTemplate | undefined>(undefined);
+    const [templateToDelete, setTemplateToDelete] = useState<NotificationTemplate | null>(null);
 
     const handleNotificationSent = () => {
         setActiveTab('History');
@@ -41,6 +43,13 @@ const Notifications: React.FC = () => {
         setIsTemplateModalOpen(false);
     };
 
+    const handleDelete = () => {
+        if(templateToDelete) {
+            deleteNotificationTemplate(templateToDelete.id);
+            setTemplateToDelete(null);
+        }
+    };
+
     const tabItems: { name: NotificationTab }[] = [
         { name: 'Compose' },
         { name: 'Templates' },
@@ -60,7 +69,7 @@ const Notifications: React.FC = () => {
             case 'Templates':
                 return (
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                        <div className="flex justify-between items-center p-4 border-b">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b gap-2">
                             <h3 className="text-xl font-bold text-gray-800">Manage Templates</h3>
                             <button onClick={openAddTemplateModal} className="flex items-center bg-gray-100 text-gray-800 px-3 py-1.5 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-sm">
                                 <PlusIcon className="w-4 h-4 mr-2"/>
@@ -68,7 +77,7 @@ const Notifications: React.FC = () => {
                             </button>
                         </div>
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left">
+                            <table className="w-full text-left min-w-[700px]">
                                 <thead className="bg-gray-50 border-b border-gray-200">
                                     <tr>
                                         <th className="p-4 font-semibold text-sm text-gray-600">Template Name</th>
@@ -79,7 +88,7 @@ const Notifications: React.FC = () => {
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
                                     {notificationTemplates?.map(template => (
-                                        <tr key={template.id}>
+                                        <tr key={template.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="p-4 font-medium text-gray-900">{template.name}</td>
                                             <td className="p-4 text-gray-700 truncate max-w-xs" title={template.title}>{template.title}</td>
                                             <td className="p-4 text-gray-700">{template.target}</td>
@@ -90,7 +99,7 @@ const Notifications: React.FC = () => {
                                                         <button onClick={() => openEditTemplateModal(template)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors"><EditIcon className="w-5 h-5"/></button>
                                                     </Tooltip>
                                                     <Tooltip text="Delete Template">
-                                                        <button onClick={() => deleteNotificationTemplate(template.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors"><DeleteIcon className="w-5 h-5"/></button>
+                                                        <button onClick={() => setTemplateToDelete(template)} className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors"><DeleteIcon className="w-5 h-5"/></button>
                                                     </Tooltip>
                                                 </div>
                                             </td>
@@ -111,7 +120,7 @@ const Notifications: React.FC = () => {
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                         <h3 className="text-xl font-bold text-gray-800 p-4 border-b">Sent History</h3>
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left">
+                            <table className="w-full text-left min-w-[700px]">
                                 <thead className="bg-gray-50 border-b border-gray-200">
                                     <tr>
                                         <th className="p-4 font-semibold text-sm text-gray-600">Title</th>
@@ -122,7 +131,7 @@ const Notifications: React.FC = () => {
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
                                     {sentNotifications?.map(notif => (
-                                        <tr key={notif.id}>
+                                        <tr key={notif.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="p-4 font-medium text-gray-900">{notif.title}</td>
                                             <td className="p-4 text-gray-700 max-w-sm truncate" title={notif.message}>{notif.message}</td>
                                             <td className="p-4 text-gray-700">{notif.target}</td>
@@ -171,6 +180,15 @@ const Notifications: React.FC = () => {
             <Modal isOpen={isTemplateModalOpen} onClose={closeModal} title={editingTemplate ? "Edit Template" : "Create New Template"}>
                 <NotificationTemplateForm template={editingTemplate} onSave={closeModal} />
             </Modal>
+
+            <ConfirmationModal
+                isOpen={!!templateToDelete}
+                onClose={() => setTemplateToDelete(null)}
+                onConfirm={handleDelete}
+                title="Delete Template"
+                message={`Are you sure you want to delete the template "${templateToDelete?.name}"?`}
+                confirmText="Delete"
+            />
         </div>
     );
 };

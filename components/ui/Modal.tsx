@@ -23,11 +23,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
-            <div className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col`}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4 transition-opacity">
+            <div className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col modal-animate-in`}>
                 <div className="flex justify-between items-center p-4 border-b border-gray-200">
                     <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-                    <button onClick={onClose} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+                    <button onClick={onClose} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
                         <CloseIcon className="w-6 h-6" />
                     </button>
                 </div>

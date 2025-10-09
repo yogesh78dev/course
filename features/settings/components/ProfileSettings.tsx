@@ -14,7 +14,6 @@ const ProfileSettings: React.FC = () => {
         avatar: '',
     });
     const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState('');
 
     useEffect(() => {
         if (adminUser) {
@@ -36,13 +35,10 @@ const ProfileSettings: React.FC = () => {
         e.preventDefault();
         if (!adminUser) return;
         setLoading(true);
-        setMessage('');
         try {
             await updateUser({ ...adminUser, ...formData });
-            setMessage('Profile updated successfully!');
-            setTimeout(() => setMessage(''), 3000);
         } catch (error: any) {
-            setMessage(error.message || 'Failed to update profile.');
+            // Error toast handled by context
         } finally {
             setLoading(false);
         }
@@ -80,8 +76,6 @@ const ProfileSettings: React.FC = () => {
                         </div>
                     </div>
                 </div>
-
-                {message && <p className={`mt-4 text-sm ${message.includes('success') ? 'text-green-600' : 'text-red-600'}`}>{message}</p>}
 
                 <div className="flex justify-end pt-6 mt-6 border-t border-gray-200">
                     <button type="submit" disabled={loading} className="px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-700 font-semibold disabled:bg-primary-300">

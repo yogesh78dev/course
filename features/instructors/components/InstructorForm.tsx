@@ -14,6 +14,7 @@ const InstructorForm: React.FC<InstructorFormProps> = ({ instructor, onSave }) =
         email: '',
         bio: '',
     });
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (instructor) {
@@ -32,14 +33,21 @@ const InstructorForm: React.FC<InstructorFormProps> = ({ instructor, onSave }) =
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (instructor) {
-            updateInstructor({ ...instructor, ...formData });
-        } else {
-            addInstructor(formData);
+        setLoading(true);
+        try {
+            if (instructor) {
+                await updateInstructor({ ...instructor, ...formData });
+            } else {
+                await addInstructor(formData);
+            }
+            onSave();
+        } catch (err) {
+            // Error is handled by the context's toast
+        } finally {
+            setLoading(false);
         }
-        onSave();
     };
 
     return (
@@ -57,8 +65,10 @@ const InstructorForm: React.FC<InstructorFormProps> = ({ instructor, onSave }) =
                 <textarea id="bio" name="bio" value={formData.bio} onChange={handleChange} rows={4} required className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" placeholder="A brief bio about the instructor..."></textarea>
             </div>
             <div className="flex justify-end space-x-3 pt-4">
-                <button type="button" onClick={onSave} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">Save Instructor</button>
+                <button type="button" onClick={onSave} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold">Cancel</button>
+                <button type="submit" disabled={loading} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 font-semibold disabled:bg-primary-300">
+                    {loading ? 'Saving...' : 'Save Instructor'}
+                </button>
             </div>
         </form>
     );

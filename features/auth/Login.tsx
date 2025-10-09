@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { EmailIcon } from '../../components/icons/index';
+import { EmailIcon, KeyIcon } from '../../components/icons/index';
 import * as api from '../../services/api';
+import { useAppContext } from '../../context/AppContext';
 
 interface LoginViewProps {
     onLogin: (token: string) => void;
@@ -11,6 +12,7 @@ const Login: React.FC<LoginViewProps> = ({ onLogin }) => {
     const [password, setPassword] = useState('abc123');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const { addToast } = useAppContext();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -20,7 +22,9 @@ const Login: React.FC<LoginViewProps> = ({ onLogin }) => {
             const response = await api.login(email, password);
             onLogin(response.token);
         } catch (err: any) {
-            setError(err.message || 'Login failed. Please check your credentials.');
+            const errorMessage = err.message || 'Login failed. Please check your credentials.';
+            setError(errorMessage);
+            addToast(errorMessage, 'error');
         } finally {
             setLoading(false);
         }
@@ -61,9 +65,7 @@ const Login: React.FC<LoginViewProps> = ({ onLogin }) => {
                             </label>
                             <div className="relative">
                                  <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <svg className="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H5v-2H3v-2H1v-4a6 6 0 016-6h4a6 6 0 016 6z" />
-                                    </svg>
+                                    <KeyIcon className="w-5 h-5 text-gray-400" />
                                 </span>
                                 <input
                                     type="password"

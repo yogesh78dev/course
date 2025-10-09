@@ -1,15 +1,21 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useAppContext } from '../../context/AppContext';
 import { Sale, UserRole } from '../../types';
+import { UsersIcon, SalesIcon, CoursesIcon, CheckIcon } from '../../components/icons/index';
 
-const StatCard: React.FC<{ title: string; value: string; change: string; isPositive: boolean }> = ({ title, value, change, isPositive }) => (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-        <p className="text-3xl font-bold text-gray-800 mt-2">{value}</p>
-        <p className={`text-sm mt-2 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-            {change} vs. last month
-        </p>
+const StatCard: React.FC<{ title: string; value: string; change: string; isPositive: boolean; icon: React.ReactNode; }> = ({ title, value, change, isPositive, icon }) => (
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex items-center">
+        <div className="p-3 rounded-full bg-primary-100 text-primary mr-4">
+            {icon}
+        </div>
+        <div>
+            <h3 className="text-sm font-medium text-gray-500">{title}</h3>
+            <p className="text-3xl font-bold text-gray-800 mt-1">{value}</p>
+            <p className={`text-sm mt-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                {change} vs. last month
+            </p>
+        </div>
     </div>
 );
 
@@ -19,15 +25,33 @@ const Dashboard: React.FC = () => {
     const totalRevenue = sales.reduce((acc, sale) => acc + Number(sale.amount), 0);
     const totalSales = sales.length;
     
-    // Mock sales data for chart
-    const revenueData = [
-        { name: 'Jan', Revenue: 4000 },
-        { name: 'Feb', Revenue: 3000 },
-        { name: 'Mar', Revenue: 5000 },
-        { name: 'Apr', Revenue: 4500 },
-        { name: 'May', Revenue: 6000 },
-        { name: 'Jun', Revenue: totalRevenue },
-    ];
+    const salesByMonth = useMemo(() => {
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const data = Array.from({ length: 6 }, (_, i) => {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            return {
+                name: monthNames[d.getMonth()],
+                year: d.getFullYear(),
+                Revenue: 0,
+            };
+        }).reverse();
+
+        sales.forEach(sale => {
+            if (sale.status === 'Paid') {
+                const saleDate = new Date(sale.date);
+                const saleMonth = saleDate.getMonth();
+                const saleYear = saleDate.getFullYear();
+                const monthData = data.find(m => m.name === monthNames[saleMonth] && m.year === saleYear);
+                if (monthData) {
+                    monthData.Revenue += Number(sale.amount);
+                }
+            }
+        });
+
+        return data.map(({ name, Revenue }) => ({ name, Revenue }));
+    }, [sales]);
+
 
     const userRoleData = Object.values(UserRole)
         .filter(role => role !== UserRole.ADMIN) // Exclude admins
@@ -49,17 +73,17 @@ const Dashboard: React.FC = () => {
             <h2 className="text-3xl font-bold text-gray-800">Dashboard</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard title="Total Revenue" value={`₹${totalRevenue.toFixed(2)}`} change="+12.5%" isPositive={true} />
-                <StatCard title="Total Sales" value={totalSales.toString()} change="+8.2%" isPositive={true} />
-                <StatCard title="New Users" value={users.length.toString()} change="+5.1%" isPositive={true} />
-                <StatCard title="Total Courses" value={courses.length.toString()} change="-1.0%" isPositive={false} />
+                <StatCard title="Total Revenue" value={`₹${totalRevenue.toFixed(2)}`} change="+12.5%" isPositive={true} icon={<SalesIcon className="w-6 h-6" />} />
+                <StatCard title="Total Sales" value={totalSales.toString()} change="+8.2%" isPositive={true} icon={<CheckIcon className="w-6 h-6" />} />
+                <StatCard title="New Users" value={users.length.toString()} change="+5.1%" isPositive={true} icon={<UsersIcon className="w-6 h-6" />} />
+                <StatCard title="Total Courses" value={courses.length.toString()} change="-1.0%" isPositive={false} icon={<CoursesIcon className="w-6 h-6" />} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">Revenue Overview</h3>
                     <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={revenueData}>
+                        <BarChart data={salesByMonth}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
                             <XAxis dataKey="name" />
                             <YAxis />
@@ -100,7 +124,7 @@ const Dashboard: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                             {recentSales.map((sale: Sale) => (
-                                <tr key={sale.id}>
+                                <tr key={sale.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="p-4 text-gray-700">{sale.user.name}</td>
                                     <td className="p-4 text-gray-700">{sale.course.title}</td>
                                     <td className="p-4 text-gray-700">{sale.date}</td>

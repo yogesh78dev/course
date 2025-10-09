@@ -1,4 +1,4 @@
-    // backend/controllers/promotionController.js
+// backend/controllers/promotionController.js
 const db = require('../db');
 const asyncHandler = require('../utils/asyncHandler');
 const { v4: uuidv4 } = require('uuid');

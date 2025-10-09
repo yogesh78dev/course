@@ -35,7 +35,6 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSave }) => {
         avatar: '',
     });
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
 
     useEffect(() => {
         if (user) {
@@ -58,7 +57,6 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSave }) => {
                 avatar: '',
             });
         }
-        setError('');
     }, [user]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -69,7 +67,6 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSave }) => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        setError('');
         try {
             if (user) {
                 await updateUser({ ...user, ...formData });
@@ -78,7 +75,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSave }) => {
             }
             onSave();
         } catch (err: any) {
-            setError(err.message || 'An unexpected error occurred. Please try again.');
+            // Error toast is handled by the context
         } finally {
             setLoading(false);
         }
@@ -135,14 +132,12 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSave }) => {
                 </div>
             </div>
 
-            {error && <p className="text-sm text-red-600 text-center mb-4">{error}</p>}
-
             <div className="flex justify-end space-x-3 pt-4 border-t">
-                <button type="button" onClick={onSave} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cancel</button>
+                <button type="button" onClick={onSave} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold">Cancel</button>
                 <button 
                     type="submit" 
                     disabled={loading} 
-                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 disabled:bg-primary-300 disabled:cursor-not-allowed"
+                    className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 font-semibold disabled:bg-primary-300 disabled:cursor-not-allowed"
                 >
                     {loading ? 'Saving...' : 'Save User'}
                 </button>

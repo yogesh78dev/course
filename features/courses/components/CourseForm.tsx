@@ -83,7 +83,7 @@ const LessonForm: React.FC<LessonFormProps> = ({ lesson, onSave }) => {
                     </select>
                 </div>
             )}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">Lesson Type</label>
                     <select id="type" name="type" value={formData.type} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
@@ -333,7 +333,7 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
                         <InputField label="Description" name="description" value={formData.description} onChange={handleChange}>
                             <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={4} required className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300"></textarea>
                         </InputField>
-                        <div className="grid grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <InputField label="Price (₹)" name="price" type="number" value={formData.price} onChange={handleChange} />
                             <InputField label="Category" name="category" value={formData.category} onChange={handleChange}>
                                 <select id="category" name="category" value={formData.category} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
@@ -347,7 +347,7 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
                             </InputField>
                             <InputField label="Duration (e.g., 10 hours)" name="duration" value={formData.duration} onChange={handleChange} />
                         
-                            <div className="col-span-2 bg-gray-50 p-4 rounded-lg border mt-2 space-y-4">
+                            <div className="col-span-1 md:col-span-2 bg-gray-50 p-4 rounded-lg border mt-2 space-y-4">
                                 <div>
                                     <h4 className="font-semibold text-gray-800 mb-2">Access Control</h4>
                                     <div className="flex items-center space-x-6">

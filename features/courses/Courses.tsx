@@ -5,6 +5,7 @@ import { EditIcon, DeleteIcon, PlusIcon, StarIcon } from '../../components/icons
 import Modal from '../../components/ui/Modal';
 import CourseForm from './components/CourseForm';
 import Tooltip from '../../components/ui/Tooltip';
+import ConfirmationModal from '../../components/ui/ConfirmationModal';
 
 const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
     return (
@@ -21,6 +22,7 @@ const Courses: React.FC = () => {
     const [filterCategory, setFilterCategory] = useState<string>('All');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCourse, setEditingCourse] = useState<Course | undefined>(undefined);
+    const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
 
     const openAddModal = () => {
         setEditingCourse(undefined);
@@ -35,6 +37,13 @@ const Courses: React.FC = () => {
     const closeModal = () => {
         setIsModalOpen(false);
         setEditingCourse(undefined);
+    };
+
+    const handleDelete = () => {
+        if(courseToDelete) {
+            deleteCourse(courseToDelete.id);
+            setCourseToDelete(null);
+        }
     };
 
     const getAverageRating = (courseId: string) => {
@@ -53,7 +62,7 @@ const Courses: React.FC = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <h2 className="text-3xl font-bold text-gray-800">Courses</h2>
                 <button onClick={openAddModal} className="flex items-center bg-primary text-white px-4 py-2 rounded-lg font-semibold hover:bg-primary-700 transition-colors">
                     <PlusIcon className="w-5 h-5 mr-2"/>
@@ -74,63 +83,65 @@ const Courses: React.FC = () => {
                 </select>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th className="p-4 font-semibold text-sm text-gray-600">Course Title</th>
-                            <th className="p-4 font-semibold text-sm text-gray-600">Category</th>
-                            <th className="p-4 font-semibold text-sm text-gray-600">Rating</th>
-                            <th className="p-4 font-semibold text-sm text-gray-600">Price</th>
-                            <th className="p-4 font-semibold text-sm text-gray-600">Instructor</th>
-                            <th className="p-4 font-semibold text-sm text-gray-600">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                        {filteredCourses?.map(course => {
-                            const { avg, count } = getAverageRating(course.id);
-                            const instructor = instructors.find(i => i.id === course.instructorId);
-                            return (
-                                <tr key={course.id}>
-                                    <td className="p-4 flex items-center">
-                                        <img src={course.posterImageUrl} alt={course.title} className="w-16 h-10 object-cover rounded-md mr-4"/>
-                                        <div>
-                                            <p className="font-medium text-gray-900">{course.title}</p>
-                                            <p className="text-sm text-gray-500">{course.duration}</p>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-gray-700">{course.category}</td>
-                                    <td className="p-4 text-gray-700">
-                                        {count > 0 ? (
-                                            <div className="flex items-center space-x-1">
-                                                <StarRating rating={avg} />
-                                                <span className="text-xs text-gray-500">({count})</span>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[800px]">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th className="p-4 font-semibold text-sm text-gray-600">Course Title</th>
+                                <th className="p-4 font-semibold text-sm text-gray-600">Category</th>
+                                <th className="p-4 font-semibold text-sm text-gray-600">Rating</th>
+                                <th className="p-4 font-semibold text-sm text-gray-600">Price</th>
+                                <th className="p-4 font-semibold text-sm text-gray-600">Instructor</th>
+                                <th className="p-4 font-semibold text-sm text-gray-600">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                            {filteredCourses?.map(course => {
+                                const { avg, count } = getAverageRating(course.id);
+                                const instructor = instructors.find(i => i.id === course.instructorId);
+                                return (
+                                    <tr key={course.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="p-4 flex items-center">
+                                            <img src={course.posterImageUrl} alt={course.title} className="w-16 h-10 object-cover rounded-md mr-4"/>
+                                            <div>
+                                                <p className="font-medium text-gray-900">{course.title}</p>
+                                                <p className="text-sm text-gray-500">{course.duration}</p>
                                             </div>
-                                        ) : (
-                                            <span className="text-sm text-gray-400">No ratings</span>
-                                        )}
-                                    </td>
-                                    <td className="p-4 text-gray-900 font-semibold">₹{Number(course.price).toFixed(2)}</td>
-                                    <td className="p-4 text-gray-700">{instructor?.name || 'N/A'}</td>
-                                    <td className="p-4">
-                                        <div className="flex space-x-2">
-                                            <Tooltip text="Edit Course">
-                                                <button onClick={() => openEditModal(course)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors">
-                                                    <EditIcon className="w-5 h-5"/>
-                                                </button>
-                                            </Tooltip>
-                                            <Tooltip text="Delete Course">
-                                                <button onClick={() => deleteCourse(course.id)} className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors">
-                                                    <DeleteIcon className="w-5 h-5"/>
-                                                </button>
-                                            </Tooltip>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                                        </td>
+                                        <td className="p-4 text-gray-700">{course.category}</td>
+                                        <td className="p-4 text-gray-700">
+                                            {count > 0 ? (
+                                                <div className="flex items-center space-x-1">
+                                                    <StarRating rating={avg} />
+                                                    <span className="text-xs text-gray-500">({count})</span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-sm text-gray-400">No ratings</span>
+                                            )}
+                                        </td>
+                                        <td className="p-4 text-gray-900 font-semibold">₹{Number(course.price).toFixed(2)}</td>
+                                        <td className="p-4 text-gray-700">{instructor?.name || 'N/A'}</td>
+                                        <td className="p-4">
+                                            <div className="flex space-x-2">
+                                                <Tooltip text="Edit Course">
+                                                    <button onClick={() => openEditModal(course)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors">
+                                                        <EditIcon className="w-5 h-5"/>
+                                                    </button>
+                                                </Tooltip>
+                                                <Tooltip text="Delete Course">
+                                                    <button onClick={() => setCourseToDelete(course)} className="p-2 text-red-600 hover:bg-red-100 rounded-full transition-colors">
+                                                        <DeleteIcon className="w-5 h-5"/>
+                                                    </button>
+                                                </Tooltip>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
                  {filteredCourses.length === 0 && (
                     <div className="text-center py-10 text-gray-500">
                         No courses found for this category.
@@ -141,6 +152,14 @@ const Courses: React.FC = () => {
             <Modal isOpen={isModalOpen} onClose={closeModal} title={editingCourse ? "Edit Course" : "Add New Course"} size="5xl">
                 <CourseForm course={editingCourse} onSave={closeModal}/>
             </Modal>
+            <ConfirmationModal
+                isOpen={!!courseToDelete}
+                onClose={() => setCourseToDelete(null)}
+                onConfirm={handleDelete}
+                title="Delete Course"
+                message={`Are you sure you want to delete the course "${courseToDelete?.title}"? This action cannot be undone.`}
+                confirmText="Delete"
+            />
         </div>
     );
 };

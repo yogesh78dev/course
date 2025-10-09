@@ -12,8 +12,8 @@ const StudentHeader: React.FC<StudentHeaderProps> = ({ onLogout, onExitStudentVi
     const [showProfileMenu, setShowProfileMenu] = useState(false);
 
     return (
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0">
-            <div className="flex items-center space-x-4">
+        <header className="h-auto md:h-16 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between px-4 sm:px-6 py-2">
+            <div className="flex items-center space-x-4 flex-wrap gap-2">
                 <h1 className="text-2xl font-bold text-primary">CourseAdmin</h1>
                 <span className="text-sm font-semibold text-yellow-800 bg-yellow-100 px-3 py-1 rounded-full">
                     Student View

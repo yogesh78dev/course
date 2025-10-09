@@ -18,13 +18,33 @@ const AnalyticsView: React.FC = () => {
     const totalRevenue = useMemo(() => sales.reduce((acc, sale) => acc + Number(sale.amount), 0), [sales]);
     const totalSales = sales.length;
 
-    // Mock data for the chart
-    const chartData = [
-      { name: 'Week 1', Sales: 12, Revenue: 1200 },
-      { name: 'Week 2', Sales: 19, Revenue: 2100 },
-      { name: 'Week 3', Sales: 8, Revenue: 950 },
-      { name: 'Week 4', Sales: 15, Revenue: 1800 },
-    ];
+    const salesByWeek = useMemo(() => {
+        const getWeekStartDate = (dateString: string) => {
+            const date = new Date(dateString);
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+            return new Date(date.setDate(diff)).toISOString().split('T')[0];
+        };
+        
+        const weeklyData: { [key: string]: { Sales: number, Revenue: number } } = {};
+
+        sales.forEach(sale => {
+            if (sale.status === 'Paid') {
+                const weekStart = getWeekStartDate(sale.date);
+                if (!weeklyData[weekStart]) {
+                    weeklyData[weekStart] = { Sales: 0, Revenue: 0 };
+                }
+                weeklyData[weekStart].Sales += 1;
+                weeklyData[weekStart].Revenue += Number(sale.amount);
+            }
+        });
+
+        // FIX: Sort by the full date string before mapping to ensure correct chronological order, especially across years.
+        return Object.entries(weeklyData)
+            .sort(([weekA], [weekB]) => new Date(weekA).getTime() - new Date(weekB).getTime())
+            .map(([week, data]) => ({ name: `Wk ${week.slice(5)}`, ...data }))
+            .slice(-4); // Get last 4 weeks of data
+    }, [sales]);
 
     const bestSellingCourses = useMemo(() => {
         const courseSales: { [key: string]: { salesCount: number, revenue: number } } = {};
@@ -108,7 +128,7 @@ const AnalyticsView: React.FC = () => {
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4">Sales Performance Overview</h3>
                 <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={chartData}>
+                    <LineChart data={salesByWeek}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="name" />
                         <YAxis yAxisId="left" tickFormatter={(value) => `₹${value}`} />
@@ -122,7 +142,7 @@ const AnalyticsView: React.FC = () => {
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                <div className="flex justify-between items-center p-4 border-b">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b gap-2">
                     <h3 className="text-lg font-semibold text-gray-800">Best-Selling Courses</h3>
                     <Tooltip text="Download Best Sellers Report (CSV)">
                         <button onClick={handleDownloadBestSellersReport} className="flex items-center text-sm bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg font-semibold hover:bg-gray-200 transition-colors">
@@ -132,7 +152,7 @@ const AnalyticsView: React.FC = () => {
                     </Tooltip>
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full text-left min-w-[500px]">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th className="p-4 font-semibold text-sm text-gray-600">Course</th>
@@ -159,7 +179,7 @@ const AnalyticsView: React.FC = () => {
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                 <div className="flex justify-between items-center p-4 border-b">
+                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b gap-2">
                     <h3 className="text-lg font-semibold text-gray-800">Coupon Usage Report</h3>
                     <Tooltip text="Download Coupon Report (CSV)">
                         <button onClick={handleDownloadCouponReport} className="flex items-center text-sm bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg font-semibold hover:bg-gray-200 transition-colors">
@@ -169,7 +189,7 @@ const AnalyticsView: React.FC = () => {
                     </Tooltip>
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full text-left min-w-[600px]">
                         <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
                                 <th className="p-4 font-semibold text-sm text-gray-600">Coupon Code</th>

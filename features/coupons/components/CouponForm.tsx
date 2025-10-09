@@ -19,6 +19,7 @@ const CouponForm: React.FC<CouponFormProps> = ({ coupon, onSave }) => {
         courseIds: [] as string[],
         firstTimeBuyerOnly: false,
     });
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (coupon) {
@@ -66,14 +67,21 @@ const CouponForm: React.FC<CouponFormProps> = ({ coupon, onSave }) => {
         });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (coupon) {
-            updateCoupon({ ...coupon, ...formData });
-        } else {
-            addCoupon(formData);
+        setLoading(true);
+        try {
+            if (coupon) {
+                await updateCoupon({ ...coupon, ...formData });
+            } else {
+                await addCoupon(formData);
+            }
+            onSave();
+        } catch(err) {
+            // Error is handled by context toast
+        } finally {
+            setLoading(false);
         }
-        onSave();
     };
 
     return (
@@ -150,8 +158,10 @@ const CouponForm: React.FC<CouponFormProps> = ({ coupon, onSave }) => {
             </div>
 
             <div className="flex justify-end space-x-3 pt-4">
-                <button type="button" onClick={onSave} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">Save Coupon</button>
+                <button type="button" onClick={onSave} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-semibold">Cancel</button>
+                <button type="submit" disabled={loading} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700 font-semibold disabled:bg-primary-300">
+                    {loading ? 'Saving...' : 'Save Coupon'}
+                </button>
             </div>
         </form>
     );

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { User, Course, Sale, Category, Notification, UserRole, Review, ReviewStatus, Coupon, SentNotification, NotificationTemplate, Instructor } from '../types';
 import * as api from '../services/api';
 
@@ -7,6 +7,12 @@ interface Promotion {
     show: boolean;
     title: string;
     description: string;
+}
+
+export interface Toast {
+    id: number;
+    message: string;
+    type: 'success' | 'error';
 }
 
 interface AppContextType {
@@ -60,6 +66,9 @@ interface AppContextType {
     // FIX: Add promotion and setPromotion to context type
     promotion: Promotion;
     setPromotion: React.Dispatch<React.SetStateAction<Promotion>>;
+    toasts: Toast[];
+    addToast: (message: string, type: 'success' | 'error') => void;
+    removeToast: (id: number) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -83,15 +92,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [coupons, setCoupons] = useState<Coupon[]>([]);
     const [sentNotifications, setSentNotifications] = useState<SentNotification[]>([]);
     const [notificationTemplates, setNotificationTemplates] = useState<NotificationTemplate[]>([]);
-    // FIX: Add state for promotion popup
-    const [promotion, setPromotion] = useState<Promotion>({
-        show: false,
-        title: 'Summer Sale!',
-        description: 'Get 25% off on all courses. Use code SUMMER25.'
-    });
+    const [promotion, setPromotion] = useState<Promotion>({ show: false, title: '', description: '' });
     const [currentStudent, setCurrentStudent] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [toasts, setToasts] = useState<Toast[]>([]);
+
+    const addToast = useCallback((message: string, type: 'success' | 'error') => {
+        setToasts(prev => [...prev, { id: Date.now(), message, type }]);
+    }, []);
+
+    const removeToast = useCallback((id: number) => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+    }, []);
     
     const fetchAllData = useCallback(async () => {
         try {
@@ -117,127 +130,148 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setSentNotifications(historyRes.data);
         } catch (err: any) {
             setError(err.message || 'Failed to fetch data');
+            addToast(err.message || 'Failed to fetch data', 'error');
             if (err.message.includes('Unauthorized')) {
-                // Handle token expiry gracefully
                 localStorage.removeItem('authToken');
                 window.location.reload();
             }
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [addToast]);
 
-    const clearAllData = () => {
-        setCourses([]);
-        setUsers([]);
-        setSales([]);
-        setCategories([]);
-        setInstructors([]);
-        setNotifications([]);
-        setReviews([]);
-        setCoupons([]);
-        setSentNotifications([]);
-        setNotificationTemplates([]);
-        setCurrentStudent(null);
-    };
+    const clearAllData = useCallback(() => {
+        setCourses([]); setUsers([]); setSales([]); setCategories([]);
+        setInstructors([]); setNotifications([]); setReviews([]); setCoupons([]);
+        setSentNotifications([]); setNotificationTemplates([]); setCurrentStudent(null);
+    }, []);
     
     // Wrapped API calls to update state
-    const addCourse = async (courseData: Omit<Course, 'id'>) => {
+    const performApiCall = useCallback(async <T,>(apiCall: () => Promise<T>, successMessage: string, errorMessage: string) => {
+        try {
+            const result = await apiCall();
+            addToast(successMessage, 'success');
+            return result;
+        } catch (e: any) {
+            addToast(e.message || errorMessage, 'error');
+            throw e;
+        }
+    }, [addToast]);
+
+    const addCourse = useCallback((courseData: Omit<Course, 'id'>) => performApiCall(async () => {
         const res = await api.createCourse(courseData);
         setCourses(prev => [res.data, ...prev]);
-    };
-    const updateCourse = async (updatedCourse: Course) => {
+    }, 'Course created successfully!', 'Failed to create course.'), [performApiCall]);
+
+    const updateCourse = useCallback((updatedCourse: Course) => performApiCall(async () => {
         const res = await api.updateCourse(updatedCourse);
         setCourses(prev => prev.map(c => c.id === res.data.id ? res.data : c));
-    };
-    const deleteCourse = async (id: string) => {
+    }, 'Course updated successfully!', 'Failed to update course.'), [performApiCall]);
+    
+    const deleteCourse = useCallback((id: string) => performApiCall(async () => {
         await api.deleteCourse(id);
         setCourses(prev => prev.filter(c => c.id !== id));
-    };
-    const addCategory = async (name: string) => {
+    }, 'Course deleted successfully.', 'Failed to delete course.'), [performApiCall]);
+
+    const addCategory = useCallback((name: string) => performApiCall(async () => {
         const res = await api.createCategory({ name });
         setCategories(prev => [...prev, res.data]);
-    };
-    const deleteCategory = async (id: string) => {
+    }, 'Category created successfully!', 'Failed to create category.'), [performApiCall]);
+
+    const deleteCategory = useCallback((id: string) => performApiCall(async () => {
         await api.deleteCategory(id);
         setCategories(prev => prev.filter(c => c.id !== id));
-    };
-    const updateCategory = async (updatedCategory: Category) => {
+    }, 'Category deleted successfully.', 'Failed to delete category.'), [performApiCall]);
+
+    const updateCategory = useCallback((updatedCategory: Category) => performApiCall(async () => {
         const res = await api.updateCategory(updatedCategory);
         setCategories(prev => prev.map(c => c.id === res.data.id ? res.data : c));
-    };
-    const addUser = async (userData: any) => {
+    }, 'Category updated successfully!', 'Failed to update category.'), [performApiCall]);
+
+    const addUser = useCallback((userData: any) => performApiCall(async () => {
         const res = await api.createUser(userData);
         setUsers(prev => [res.data, ...prev]);
-    };
-    const updateUser = async (updatedUser: User) => {
+    }, 'User created successfully!', 'Failed to create user.'), [performApiCall]);
+
+    const updateUser = useCallback((updatedUser: User) => performApiCall(async () => {
         const res = await api.updateUser(updatedUser);
         setUsers(prev => prev.map(u => u.id === res.data.id ? res.data : u));
-    };
-    const deleteUser = async (id: string) => {
+    }, 'User updated successfully!', 'Failed to update user.'), [performApiCall]);
+
+    const deleteUser = useCallback((id: string) => performApiCall(async () => {
         await api.deleteUser(id);
         setUsers(prev => prev.filter(u => u.id !== id));
-    };
-    const addInstructor = async (instructorData: any) => {
+    }, 'User deleted successfully.', 'Failed to delete user.'), [performApiCall]);
+
+    const addInstructor = useCallback((instructorData: any) => performApiCall(async () => {
         const res = await api.createInstructor(instructorData);
         setInstructors(prev => [res.data, ...prev]);
-    };
-    const updateInstructor = async (updatedInstructor: Instructor) => {
+    }, 'Instructor created successfully!', 'Failed to create instructor.'), [performApiCall]);
+    
+    const updateInstructor = useCallback((updatedInstructor: Instructor) => performApiCall(async () => {
         const res = await api.updateInstructor(updatedInstructor);
         setInstructors(prev => prev.map(i => i.id === res.data.id ? res.data : i));
-    };
-    const deleteInstructor = async (id: string) => {
+    }, 'Instructor updated successfully!', 'Failed to update instructor.'), [performApiCall]);
+    
+    const deleteInstructor = useCallback((id: string) => performApiCall(async () => {
         await api.deleteInstructor(id);
         setInstructors(prev => prev.filter(i => i.id !== id));
-    };
-    const updateReviewStatus = async (reviewId: string, status: ReviewStatus) => {
+    }, 'Instructor deleted successfully.', 'Failed to delete instructor.'), [performApiCall]);
+    
+    const updateReviewStatus = useCallback((reviewId: string, status: ReviewStatus) => performApiCall(async () => {
         const res = await api.updateReviewStatus(reviewId, status);
         setReviews(prev => prev.map(r => r.id === res.data.id ? res.data : r));
-    };
-    const deleteReview = async (reviewId: string) => {
+    }, 'Review status updated.', 'Failed to update review status.'), [performApiCall]);
+
+    const deleteReview = useCallback((reviewId: string) => performApiCall(async () => {
         await api.deleteReview(reviewId);
         setReviews(prev => prev.filter(r => r.id !== reviewId));
-    };
-    const addCoupon = async (couponData: any) => {
+    }, 'Review deleted successfully.', 'Failed to delete review.'), [performApiCall]);
+
+    const addCoupon = useCallback((couponData: any) => performApiCall(async () => {
         const res = await api.createCoupon(couponData);
         setCoupons(prev => [res.data, ...prev]);
-    };
-    const updateCoupon = async (updatedCoupon: Coupon) => {
+    }, 'Coupon created successfully!', 'Failed to create coupon.'), [performApiCall]);
+
+    const updateCoupon = useCallback((updatedCoupon: Coupon) => performApiCall(async () => {
         const res = await api.updateCoupon(updatedCoupon);
         setCoupons(prev => prev.map(c => c.id === res.data.id ? res.data : c));
-    };
-    const deleteCoupon = async (id: string) => {
+    }, 'Coupon updated successfully!', 'Failed to update coupon.'), [performApiCall]);
+
+    const deleteCoupon = useCallback((id: string) => performApiCall(async () => {
         await api.deleteCoupon(id);
         setCoupons(prev => prev.filter(c => c.id !== id));
-    };
-    const sendNotification = async (notificationData: any) => {
+    }, 'Coupon deleted successfully.', 'Failed to delete coupon.'), [performApiCall]);
+    
+    const sendNotification = useCallback((notificationData: any) => performApiCall(async () => {
         const res = await api.sendNotification(notificationData);
         setSentNotifications(prev => [res.data, ...prev]);
         const newInAppNotification: Notification = {
-            id: `not-${Date.now()}`,
-            title: res.data.title,
-            message: res.data.message,
-            timestamp: 'Just now',
-            read: false,
+            id: `not-${Date.now()}`, title: res.data.title, message: res.data.message,
+            timestamp: 'Just now', read: false,
         };
         setNotifications(prev => [newInAppNotification, ...prev]);
-    };
-    const addNotificationTemplate = async (templateData: any) => {
+    }, 'Notification sent successfully!', 'Failed to send notification.'), [performApiCall]);
+
+    const addNotificationTemplate = useCallback((templateData: any) => performApiCall(async () => {
         const res = await api.createNotificationTemplate(templateData);
         setNotificationTemplates(prev => [res.data, ...prev]);
-    };
-    const updateNotificationTemplate = async (template: NotificationTemplate) => {
+    }, 'Template created successfully!', 'Failed to create template.'), [performApiCall]);
+
+    const updateNotificationTemplate = useCallback((template: NotificationTemplate) => performApiCall(async () => {
         const res = await api.updateNotificationTemplate(template);
         setNotificationTemplates(prev => prev.map(t => t.id === res.data.id ? res.data : t));
-    };
-    const deleteNotificationTemplate = async (id: string) => {
+    }, 'Template updated successfully!', 'Failed to update template.'), [performApiCall]);
+
+    const deleteNotificationTemplate = useCallback((id: string) => performApiCall(async () => {
         await api.deleteNotificationTemplate(id);
         setNotificationTemplates(prev => prev.filter(t => t.id !== id));
-    };
-    const updateSaleStatus = async (saleId: string, status: Sale['status']) => {
+    }, 'Template deleted successfully.', 'Failed to delete template.'), [performApiCall]);
+
+    const updateSaleStatus = useCallback((saleId: string, status: Sale['status']) => performApiCall(async () => {
         const res = await api.updateSaleStatus(saleId, status);
         setSales(prev => prev.map(s => s.id === res.data.id ? res.data : s));
-    };
+    }, 'Sale status updated.', 'Failed to update sale status.'), [performApiCall]);
 
     return (
         <AppContext.Provider value={{ 
@@ -257,8 +291,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             currentStudent, setCurrentStudent,
             loading, error,
             fetchAllData, clearAllData,
-            // FIX: Provide promotion state and setter to context
             promotion, setPromotion,
+            toasts, addToast, removeToast,
         }}>
             {children}
         </AppContext.Provider>

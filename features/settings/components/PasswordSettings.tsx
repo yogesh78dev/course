@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import * as api from '../../../services/api';
+import { useAppContext } from '../../../context/AppContext';
 
 const PasswordSettings: React.FC = () => {
+    const { addToast } = useAppContext();
     const [passwords, setPasswords] = useState({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
     });
     const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState('');
+    const [error, setError] = useState('');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -17,23 +19,24 @@ const PasswordSettings: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
         if (passwords.newPassword !== passwords.confirmPassword) {
-            setMessage('New passwords do not match.');
+            setError('New passwords do not match.');
             return;
         }
         if (passwords.newPassword.length < 6) {
-             setMessage('New password must be at least 6 characters long.');
+             setError('New password must be at least 6 characters long.');
             return;
         }
         setLoading(true);
-        setMessage('');
         try {
             const { currentPassword, newPassword } = passwords;
             await api.changePassword({ currentPassword, newPassword });
-            setMessage('Password changed successfully!');
+            addToast('Password changed successfully!', 'success');
             setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
         } catch (error: any) {
-            setMessage(error.message || 'Failed to change password.');
+            setError(error.message || 'Failed to change password.');
+            addToast(error.message || 'Failed to change password.', 'error');
         } finally {
             setLoading(false);
         }
@@ -56,7 +59,7 @@ const PasswordSettings: React.FC = () => {
                         <input type="password" id="confirmPassword" name="confirmPassword" value={passwords.confirmPassword} onChange={handleChange} required className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" />
                     </div>
 
-                    {message && <p className={`text-sm ${message.includes('success') ? 'text-green-600' : 'text-red-600'}`}>{message}</p>}
+                    {error && <p className={`text-sm text-red-600`}>{error}</p>}
 
                     <div className="flex justify-end pt-2">
                         <button type="submit" disabled={loading} className="px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-700 font-semibold disabled:bg-primary-300">
