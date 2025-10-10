@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { CloseIcon } from '../icons/index';
 
 interface ModalProps {
@@ -9,8 +10,22 @@ interface ModalProps {
     size?: 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
 }
 
+const modalRootEl = document.getElementById('modal-root');
+
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = '2xl' }) => {
-    if (!isOpen) return null;
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'auto';
+        }
+        // Cleanup function to restore scroll on component unmount
+        return () => {
+            document.body.style.overflow = 'auto';
+        };
+    }, [isOpen]);
+
+    if (!isOpen || !modalRootEl) return null;
 
     const sizeClasses = {
         'md': 'max-w-md',
@@ -22,12 +37,21 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
         '5xl': 'max-w-5xl',
     };
 
-    return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4 transition-opacity">
-            <div className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col modal-animate-in`}>
+    const modalContent = (
+        <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4 transition-opacity"
+            onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+        >
+            <div 
+                className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col modal-animate-in`}
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="flex justify-between items-center p-4 border-b border-gray-200">
-                    <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-                    <button onClick={onClose} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+                    <h3 id="modal-title" className="text-xl font-bold text-gray-800">{title}</h3>
+                    <button onClick={onClose} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors" aria-label="Close modal">
                         <CloseIcon className="w-6 h-6" />
                     </button>
                 </div>
@@ -37,6 +61,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
             </div>
         </div>
     );
+
+    return createPortal(modalContent, modalRootEl);
 };
 
 export default Modal;

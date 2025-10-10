@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ChevronDownIcon, LogoutIcon } from '../icons/index';
 import { useAppContext } from '../../context/AppContext';
+import { useOutsideClick } from '../../hooks/useOutsideClick';
 
 interface StudentHeaderProps {
     onLogout: () => void;
@@ -10,6 +11,9 @@ interface StudentHeaderProps {
 const StudentHeader: React.FC<StudentHeaderProps> = ({ onLogout, onExitStudentView }) => {
     const { currentStudent } = useAppContext();
     const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const profileMenuRef = useRef<HTMLDivElement>(null);
+
+    useOutsideClick(profileMenuRef, () => setShowProfileMenu(false));
 
     return (
         <header className="h-auto md:h-16 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between px-4 sm:px-6 py-2">
@@ -24,7 +28,7 @@ const StudentHeader: React.FC<StudentHeaderProps> = ({ onLogout, onExitStudentVi
             </div>
 
             <div className="flex items-center space-x-5">
-                <div className="relative">
+                <div className="relative" ref={profileMenuRef}>
                     <button onClick={() => setShowProfileMenu(p => !p)} className="flex items-center space-x-2 p-1 rounded-lg hover:bg-gray-100">
                         <img
                             src={currentStudent?.avatar}

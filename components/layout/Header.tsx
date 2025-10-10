@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { SearchIcon, BellIcon, ChevronDownIcon, MenuIcon } from '../icons/index';
 import NotificationPanel from '../../features/notifications/components/NotificationPanel';
 import { useAppContext } from '../../context/AppContext';
 import { UserRole } from '../../types';
 import { View } from '../../App';
+import { useOutsideClick } from '../../hooks/useOutsideClick';
 
 interface HeaderProps {
     onMenuButtonClick: () => void;
@@ -16,6 +17,12 @@ const Header: React.FC<HeaderProps> = ({ onMenuButtonClick, onToggleStudentView,
     const [showNotifications, setShowNotifications] = useState(false);
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const { notifications, users } = useAppContext();
+
+    const notificationRef = useRef<HTMLDivElement>(null);
+    const profileMenuRef = useRef<HTMLDivElement>(null);
+
+    useOutsideClick(notificationRef, () => setShowNotifications(false));
+    useOutsideClick(profileMenuRef, () => setShowProfileMenu(false));
     
     const adminUser = users.find(u => u.role === UserRole.ADMIN);
     const unreadCount = notifications.filter(n => !n.read).length;
@@ -54,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuButtonClick, onToggleStudentView,
             </div>
 
             <div className="flex items-center space-x-2 sm:space-x-5">
-                <div className="relative">
+                <div className="relative" ref={notificationRef}>
                     <button onClick={() => setShowNotifications(s => !s)} className="relative p-2 rounded-full hover:bg-gray-100 transition-colors">
                         <BellIcon className="w-6 h-6 text-gray-600" />
                         {unreadCount > 0 && (
@@ -64,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuButtonClick, onToggleStudentView,
                     {showNotifications && <NotificationPanel onClose={() => setShowNotifications(false)}/>}
                 </div>
 
-                <div className="relative">
+                <div className="relative" ref={profileMenuRef}>
                     <button onClick={() => setShowProfileMenu(p => !p)} className="flex items-center space-x-2 p-1 rounded-lg hover:bg-gray-100 transition-colors">
                         <img
                             src={adminUser?.avatar}

@@ -5,7 +5,7 @@ import { Sale, UserRole } from '../../types';
 import { UsersIcon, SalesIcon, CoursesIcon, CheckIcon } from '../../components/icons/index';
 
 const StatCard: React.FC<{ title: string; value: string; change: string; isPositive: boolean; icon: React.ReactNode; }> = ({ title, value, change, isPositive, icon }) => (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex items-center">
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex items-center transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 cursor-pointer">
         <div className="p-3 rounded-full bg-primary-100 text-primary mr-4">
             {icon}
         </div>
