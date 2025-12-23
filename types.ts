@@ -53,6 +53,7 @@ export interface Lesson {
   duration: number; // in minutes
   tags: string[];
   attachmentUrl: string; // URL for an attached PDF/image
+  thumbnailUrl?: string;
 }
 
 export interface Module {
@@ -75,7 +76,24 @@ export interface Course {
   introVideoUrl: string;
   accessType: 'lifetime' | 'expiry';
   accessDuration: number | null; // in days
+  instructorName?: string;
   enableCertificate: boolean;
+}
+
+export interface Webinar {
+  id: string;
+  title: string;
+  description: string;
+  type: 'Live' | 'Recorded';
+  scheduleDate: string; // ISO date string
+  duration: number; // in minutes
+  videoUrl?: string;
+  meetingUrl?: string;
+  presenterId: string;
+  thumbnailUrl: string;
+  isFree: boolean;
+  price?: number;
+  presenterName?: string;
 }
 
 export interface Sale {

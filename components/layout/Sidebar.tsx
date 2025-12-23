@@ -1,6 +1,7 @@
+
 import React from 'react';
 import type { View } from '../../App';
-import { DashboardIcon, CoursesIcon, UsersIcon, SalesIcon, ReviewsIcon, SettingsIcon, CouponIcon, BellIcon, InstructorIcon, LogoutIcon, CloseIcon } from '../icons/index';
+import { DashboardIcon, CoursesIcon, UsersIcon, SalesIcon, ReviewsIcon, SettingsIcon, CouponIcon, BellIcon, InstructorIcon, LogoutIcon, CloseIcon, WebinarIcon } from '../icons/index';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -16,6 +17,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentView, setCu
         { name: 'Dashboard', icon: <DashboardIcon className="w-6 h-6" /> },
         { name: 'Courses', icon: <CoursesIcon className="w-6 h-6" /> },
         { name: 'Instructors', icon: <InstructorIcon className="w-6 h-6" /> },
+        { name: 'Webinars', icon: <WebinarIcon className="w-6 h-6" /> },
         { name: 'Users', icon: <UsersIcon className="w-6 h-6" /> },
         { name: 'Sales & Analytics', icon: <SalesIcon className="w-6 h-6" /> },
         { name: 'Coupons', icon: <CouponIcon className="w-6 h-6" /> },

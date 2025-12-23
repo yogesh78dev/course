@@ -1,5 +1,6 @@
+
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { User, Course, Sale, Category, Notification, UserRole, Review, ReviewStatus, Coupon, SentNotification, NotificationTemplate, Instructor } from '../types';
+import { User, Course, Sale, Category, Notification, UserRole, Review, ReviewStatus, Coupon, SentNotification, NotificationTemplate, Instructor, Webinar } from '../types';
 import * as api from '../services/api';
 
 // FIX: Add Promotion interface for promotion popup state
@@ -34,6 +35,8 @@ interface AppContextType {
     setCoupons: React.Dispatch<React.SetStateAction<Coupon[]>>;
     sentNotifications: SentNotification[];
     notificationTemplates: NotificationTemplate[];
+    webinars: Webinar[];
+    setWebinars: React.Dispatch<React.SetStateAction<Webinar[]>>;
     vimeoVideos: { id: string; title: string; url: string; }[];
     addCourse: (course: Omit<Course, 'id'>) => Promise<void>;
     updateCourse: (course: Course) => Promise<void>;
@@ -57,6 +60,9 @@ interface AppContextType {
     updateNotificationTemplate: (template: NotificationTemplate) => Promise<void>;
     deleteNotificationTemplate: (id: string) => Promise<void>;
     updateSaleStatus: (saleId: string, status: Sale['status']) => Promise<void>;
+    addWebinar: (webinar: Omit<Webinar, 'id'>) => Promise<void>;
+    updateWebinar: (webinar: Webinar) => Promise<void>;
+    deleteWebinar: (id: string) => Promise<void>;
     currentStudent: User | null;
     setCurrentStudent: React.Dispatch<React.SetStateAction<User | null>>;
     loading: boolean;
@@ -92,6 +98,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [coupons, setCoupons] = useState<Coupon[]>([]);
     const [sentNotifications, setSentNotifications] = useState<SentNotification[]>([]);
     const [notificationTemplates, setNotificationTemplates] = useState<NotificationTemplate[]>([]);
+    const [webinars, setWebinars] = useState<Webinar[]>([]);
     const [promotion, setPromotion] = useState<Promotion>({ show: false, title: '', description: '' });
     const [currentStudent, setCurrentStudent] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
@@ -112,11 +119,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setError(null);
             const [
                 coursesRes, usersRes, salesRes, categoriesRes, instructorsRes, 
-                reviewsRes, couponsRes, templatesRes, historyRes
+                reviewsRes, couponsRes, templatesRes, historyRes, webinarsRes
             ] = await Promise.all([
                 api.getCourses(), api.getUsers(), api.getSales(), api.getCategories(),
                 api.getInstructors(), api.getReviews(), api.getCoupons(),
-                api.getNotificationTemplates(), api.getNotificationHistory(),
+                api.getNotificationTemplates(), api.getNotificationHistory(), api.getWebinars()
             ]);
 
             setCourses(coursesRes.data);
@@ -128,6 +135,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setCoupons(couponsRes.data);
             setNotificationTemplates(templatesRes.data);
             setSentNotifications(historyRes.data);
+            setWebinars(webinarsRes.data);
         } catch (err: any) {
             setError(err.message || 'Failed to fetch data');
             addToast(err.message || 'Failed to fetch data', 'error');
@@ -143,7 +151,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const clearAllData = useCallback(() => {
         setCourses([]); setUsers([]); setSales([]); setCategories([]);
         setInstructors([]); setNotifications([]); setReviews([]); setCoupons([]);
-        setSentNotifications([]); setNotificationTemplates([]); setCurrentStudent(null);
+        setSentNotifications([]); setNotificationTemplates([]); setWebinars([]); setCurrentStudent(null);
     }, []);
     
     // Wrapped API calls to update state
@@ -273,12 +281,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setSales(prev => prev.map(s => s.id === res.data.id ? res.data : s));
     }, 'Sale status updated.', 'Failed to update sale status.'), [performApiCall]);
 
+    const addWebinar = useCallback((webinarData: Omit<Webinar, 'id'>) => performApiCall(async () => {
+        const res = await api.createWebinar(webinarData);
+        setWebinars(prev => [res.data, ...prev]);
+    }, 'Webinar created successfully!', 'Failed to create webinar.'), [performApiCall]);
+
+    const updateWebinar = useCallback((updatedWebinar: Webinar) => performApiCall(async () => {
+        const res = await api.updateWebinar(updatedWebinar);
+        setWebinars(prev => prev.map(w => w.id === res.data.id ? res.data : w));
+    }, 'Webinar updated successfully!', 'Failed to update webinar.'), [performApiCall]);
+
+    const deleteWebinar = useCallback((id: string) => performApiCall(async () => {
+        await api.deleteWebinar(id);
+        setWebinars(prev => prev.filter(w => w.id !== id));
+    }, 'Webinar deleted successfully.', 'Failed to delete webinar.'), [performApiCall]);
+
     return (
         <AppContext.Provider value={{ 
             courses, setCourses, users, setUsers, sales, setSales, 
             categories, setCategories, instructors, setInstructors, notifications, setNotifications,
             reviews, setReviews, coupons, setCoupons, sentNotifications,
-            notificationTemplates, vimeoVideos,
+            notificationTemplates, webinars, setWebinars, vimeoVideos,
             addCourse, updateCourse, deleteCourse,
             addCategory, deleteCategory, updateCategory,
             addUser, updateUser, deleteUser,
@@ -288,6 +311,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             sendNotification,
             addNotificationTemplate, updateNotificationTemplate, deleteNotificationTemplate,
             updateSaleStatus,
+            addWebinar, updateWebinar, deleteWebinar,
             currentStudent, setCurrentStudent,
             loading, error,
             fetchAllData, clearAllData,

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, ChangeEvent, DragEvent, useRef, useCallback } from 'react';
 import { Course, Module, Lesson } from '../../../types';
 import { useAppContext } from '../../../context/AppContext';
@@ -24,6 +25,7 @@ const LessonForm: React.FC<LessonFormProps> = ({ lesson, onSave }) => {
         duration: 0,
         tags: '', // Stored as a comma-separated string for the input field
         attachmentUrl: '',
+        thumbnailUrl: '',
     });
 
     useEffect(() => {
@@ -36,6 +38,7 @@ const LessonForm: React.FC<LessonFormProps> = ({ lesson, onSave }) => {
                 duration: lesson.duration,
                 tags: lesson.tags.join(', '),
                 attachmentUrl: lesson.attachmentUrl,
+                thumbnailUrl: lesson.thumbnailUrl || '',
             });
             if (lesson.attachmentUrl) {
                 setAttachmentName(lesson.attachmentUrl.split('/').pop() || 'File attached');
@@ -55,6 +58,10 @@ const LessonForm: React.FC<LessonFormProps> = ({ lesson, onSave }) => {
             setFormData(prev => ({ ...prev, attachmentUrl: `/uploads/${file.name}` }));
         }
     };
+    
+    const handleThumbnailChange = (dataUrl: string) => {
+        setFormData(prev => ({ ...prev, thumbnailUrl: dataUrl }));
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,6 +76,14 @@ const LessonForm: React.FC<LessonFormProps> = ({ lesson, onSave }) => {
             <div>
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Lesson Title</label>
                 <input type="text" id="title" name="title" value={formData.title} onChange={handleChange} required className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+            </div>
+            <div>
+                 <ImageUpload 
+                    label="Lesson Thumbnail (Unique)"
+                    currentImageUrl={formData.thumbnailUrl}
+                    onFileChange={handleThumbnailChange}
+                    aspectRatio="16/9"
+                />
             </div>
             <div>
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -334,7 +349,7 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
                             <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={4} required className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300"></textarea>
                         </InputField>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <InputField label="Price (₹)" name="price" type="number" value={formData.price} onChange={handleChange} />
+                            <InputField label="Price (₹) (Enter 0 for Free Course)" name="price" type="number" value={formData.price} onChange={handleChange} />
                             <InputField label="Category" name="category" value={formData.category} onChange={handleChange}>
                                 <select id="category" name="category" value={formData.category} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
                                     {categories?.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
@@ -424,6 +439,7 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
                                                     <div className="flex items-center space-x-2 flex-grow">
                                                         <GripVerticalIcon className="w-5 h-5 text-gray-400 cursor-grab" />
                                                         {getLessonIcon(lesson.type)}
+                                                        {lesson.thumbnailUrl && <img src={lesson.thumbnailUrl} alt="Thumb" className="w-8 h-5 object-cover rounded" />}
                                                         <div className="flex flex-col text-sm">
                                                             <span className="text-gray-800 font-medium">{lesson.title}</span>
                                                             <span className="text-xs text-gray-500">{lesson.contentUrl ? `Video: ${vimeoVideos.find(v=>v.url===lesson.contentUrl)?.title || 'Selected'}` : ''}</span>

@@ -8,10 +8,10 @@ import StudentHeader from './components/layout/StudentHeader';
 import { ToastContainer } from './components/ui/Toast';
 import ConfirmationModal from './components/ui/ConfirmationModal';
 
-export type View = 'Dashboard' | 'Courses' | 'Instructors' | 'Users' | 'Sales & Analytics' | 'Coupons' | 'Reviews' | 'Notifications' | 'Settings';
+export type View = 'Dashboard' | 'Courses' | 'Instructors' | 'Users' | 'Sales & Analytics' | 'Coupons' | 'Reviews' | 'Notifications' | 'Settings' | 'Webinars';
 
 const LoadingSpinner: React.FC = () => (
-    <div className="flex justify-center items-center h-full w-full">
+    <div className="flex justify-center items-center h-full w-full min-h-[50vh]">
         <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
     </div>
 );
@@ -25,6 +25,7 @@ const SettingsView = React.lazy(() => import('./features/settings/Settings'));
 const ReviewsView = React.lazy(() => import('./features/reviews/Reviews'));
 const CouponsView = React.lazy(() => import('./features/coupons/Coupons'));
 const NotificationsView = React.lazy(() => import('./features/notifications/Notifications'));
+const WebinarsView = React.lazy(() => import('./features/webinars/Webinars'));
 
 const App: React.FC = () => {
     const [currentView, setCurrentView] = useState<View>('Dashboard');
@@ -81,6 +82,7 @@ const App: React.FC = () => {
             case 'Reviews': return <ReviewsView />;
             case 'Notifications': return <NotificationsView />;
             case 'Settings': return <SettingsView />;
+            case 'Webinars': return <WebinarsView />;
             default: return <DashboardView />;
         }
     };
@@ -111,7 +113,7 @@ const App: React.FC = () => {
                     </div>
                 </div>
             ) : (
-                 <div className="relative min-h-screen bg-gray-100 text-gray-800">
+                 <div className="flex h-screen bg-gray-100 text-gray-800 overflow-hidden">
                     <Sidebar 
                         isOpen={isSidebarOpen} 
                         setIsOpen={setIsSidebarOpen}
@@ -119,14 +121,14 @@ const App: React.FC = () => {
                         setCurrentView={setCurrentView} 
                         onLogout={() => setShowLogoutConfirm(true)} 
                     />
-                    <div className="flex-1 flex flex-col md:ml-64">
+                    <div className="relative flex flex-col flex-1 md:ml-64 h-full overflow-hidden">
                         <Header 
                             onMenuButtonClick={() => setIsSidebarOpen(true)}
                             onToggleStudentView={handleToggleStudentView} 
                             onLogout={() => setShowLogoutConfirm(true)} 
                             setCurrentView={setCurrentView} 
                         />
-                        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 sm:p-6 md:p-8">
+                        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 sm:p-6 md:p-8 relative">
                             <Suspense fallback={<LoadingSpinner />}>
                                 {renderView()}
                             </Suspense>

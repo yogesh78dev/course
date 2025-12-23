@@ -1,4 +1,4 @@
-import { Course, User, Instructor, Category, ReviewStatus, Coupon, NotificationTemplate, Sale, StudentReview, Review, Certificate } from "../types";
+import { Course, User, Instructor, Category, ReviewStatus, Coupon, NotificationTemplate, Sale, StudentReview, Review, Certificate, Webinar } from "../types";
 
 // const API_URL = 'http://72.60.99.203:5000/api';
 const API_URL = 'http://localhost:5000/api';
@@ -103,6 +103,13 @@ export const updateNotificationTemplate = (data: NotificationTemplate) => reques
 export const deleteNotificationTemplate = (id: string) => request(`/notifications/templates/${id}`, { method: 'DELETE' });
 export const getNotificationHistory = () => request('/notifications/history');
 export const sendNotification = (data: any) => request('/notifications/send', { method: 'POST', body: JSON.stringify(data) });
+
+// Webinars
+export const getWebinars = () => request('/webinars');
+export const createWebinar = (data: Omit<Webinar, 'id'>) => request('/webinars', { method: 'POST', body: JSON.stringify(data) });
+export const updateWebinar = (data: Webinar) => request(`/webinars/${data.id}`, { method: 'PUT', body: JSON.stringify(data) });
+export const deleteWebinar = (id: string) => request(`/webinars/${id}`, { method: 'DELETE' });
+
 
 // Admin-facing User Profile
 export const getStudentProfile = (userId: string) => request(`/users/profile/${userId}`);

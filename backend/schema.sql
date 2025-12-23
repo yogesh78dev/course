@@ -89,12 +89,36 @@ CREATE TABLE lessons (
     content_url VARCHAR(255),
     duration_minutes INT NOT NULL DEFAULT 0,
     attachment_url VARCHAR(255),
+    thumbnail_url VARCHAR(255),
     module_id CHAR(36) NOT NULL,
     order_index INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE
 );
+
+-- =============================================
+-- Webinars Table
+-- =============================================
+
+CREATE TABLE webinars (
+    id CHAR(36) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    type ENUM('Live', 'Recorded') NOT NULL,
+    schedule_date DATETIME NOT NULL,
+    duration_minutes INT NOT NULL DEFAULT 0,
+    video_url VARCHAR(255),
+    meeting_url VARCHAR(255),
+    presenter_id CHAR(36),
+    thumbnail_url VARCHAR(255),
+    is_free BOOLEAN NOT NULL DEFAULT TRUE,
+    price DECIMAL(10, 2) DEFAULT 0.00,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (presenter_id) REFERENCES instructors(id) ON DELETE SET NULL
+);
+
 
 -- =============================================
 -- Student Interaction Tables
@@ -356,3 +380,6 @@ CREATE TABLE push_notification_tokens (
 -- Seed data for promotions
 INSERT INTO promotions (id, title, description, image_url, is_active, action_type, action_payload) VALUES
 ('promo-1', 'Mid-Year Mega Sale!', 'Get up to 50% off on all Data Science courses. Limited time offer!', 'https://picsum.photos/seed/promo/800/400', TRUE, 'View Coupon', 'cpn-1');
+
+--pending
+ALTER TABLE `lessons` ADD `thumbnail_url` VARCHAR(255) NULL DEFAULT NULL AFTER `attachment_url`;

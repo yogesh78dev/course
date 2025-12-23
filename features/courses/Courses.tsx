@@ -20,6 +20,7 @@ const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
 const Courses: React.FC = () => {
     const { courses, categories, deleteCourse, reviews, instructors } = useAppContext();
     const [filterCategory, setFilterCategory] = useState<string>('All');
+    const [filterType, setFilterType] = useState<'All' | 'Free' | 'Paid'>('All');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCourse, setEditingCourse] = useState<Course | undefined>(undefined);
     const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
@@ -56,9 +57,15 @@ const Courses: React.FC = () => {
         };
     };
 
-    const filteredCourses = filterCategory === 'All'
-        ? courses
-        : courses.filter(course => course.category === filterCategory);
+    const filteredCourses = courses.filter(course => {
+        const matchesCategory = filterCategory === 'All' || course.category === filterCategory;
+        const matchesType = filterType === 'All' 
+            ? true 
+            : filterType === 'Free' 
+                ? course.price == 0 
+                : course.price > 0;
+        return matchesCategory && matchesType;
+    });
 
     return (
         <div className="space-y-6">
@@ -70,17 +77,33 @@ const Courses: React.FC = () => {
                 </button>
             </div>
             
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center space-x-4">
-                <label htmlFor="category-filter" className="font-medium text-gray-700">Filter by Category:</label>
-                <select 
-                    id="category-filter"
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-300"
-                >
-                    <option value="All">All Categories</option>
-                    {categories?.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
-                </select>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-wrap items-center gap-4">
+                <div className="flex items-center space-x-2">
+                    <label htmlFor="category-filter" className="font-medium text-gray-700">Category:</label>
+                    <select 
+                        id="category-filter"
+                        value={filterCategory}
+                        onChange={(e) => setFilterCategory(e.target.value)}
+                        className="border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-300"
+                    >
+                        <option value="All">All Categories</option>
+                        {categories?.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+                    </select>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                    <label htmlFor="type-filter" className="font-medium text-gray-700">Type:</label>
+                    <select 
+                        id="type-filter"
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value as 'All' | 'Free' | 'Paid')}
+                        className="border border-gray-300 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-300"
+                    >
+                        <option value="All">All Types</option>
+                        <option value="Free">Free Courses</option>
+                        <option value="Paid">Paid Courses</option>
+                    </select>
+                </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -120,7 +143,13 @@ const Courses: React.FC = () => {
                                                 <span className="text-sm text-gray-400">No ratings</span>
                                             )}
                                         </td>
-                                        <td className="p-4 text-gray-900 font-semibold">₹{Number(course.price).toFixed(2)}</td>
+                                        <td className="p-4 text-gray-900 font-semibold">
+                                            {course.price === 0 ? (
+                                                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-bold">FREE</span>
+                                            ) : (
+                                                `₹${Number(course.price).toFixed(2)}`
+                                            )}
+                                        </td>
                                         <td className="p-4 text-gray-700">{instructor?.name || 'N/A'}</td>
                                         <td className="p-4">
                                             <div className="flex space-x-2">
@@ -144,7 +173,7 @@ const Courses: React.FC = () => {
                 </div>
                  {filteredCourses.length === 0 && (
                     <div className="text-center py-10 text-gray-500">
-                        No courses found for this category.
+                        No courses found matching the filters.
                     </div>
                 )}
             </div>

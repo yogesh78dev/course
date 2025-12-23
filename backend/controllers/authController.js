@@ -73,7 +73,8 @@ const registerSendOtp = asyncHandler(async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
-    const otp = crypto.randomInt(100000, 999999).toString();
+    // const otp = crypto.randomInt(100000, 999999).toString();
+    const otp = "123456";
     const expires_at = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     await db.query(
@@ -82,6 +83,12 @@ const registerSendOtp = asyncHandler(async (req, res) => {
     );
 
     await sendRegistrationEmail(email, otp);
+
+    return res.status(200).json({
+        success: true,
+        message: "OTP generated successfully (email not configured yet)",
+        otp: otp, // ⚠️ REMOVE later
+    });
 
     res.json({ message: 'Verification OTP sent to your email.' });
 });

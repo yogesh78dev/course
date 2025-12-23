@@ -1,3 +1,4 @@
+
 // backend/controllers/courseController.js
 const db = require('../db');
 const asyncHandler = require('../utils/asyncHandler');
@@ -49,6 +50,7 @@ const getFullCourse = async (courseId) => {
                 duration: l.duration_minutes,
                 tags: [], // Tags not stored in DB currently, default to empty
                 attachmentUrl: l.attachment_url,
+                thumbnailUrl: l.thumbnail_url
             }))
     }));
     
@@ -113,8 +115,8 @@ const createOrUpdateCourseWithCurriculum = async (courseData, courseId = null) =
                 for (const [lessonIndex, lesson] of module.lessons.entries()) {
                     const lessonId = lesson.id.startsWith('les-') ? uuidv4() : lesson.id; // Use new UUID for new lessons
                     await connection.query(
-                        'INSERT INTO lessons (id, title, description, type, content_url, duration_minutes, attachment_url, module_id, order_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                        [lessonId, lesson.title, lesson.description, lesson.type, lesson.contentUrl, lesson.duration, lesson.attachmentUrl, moduleId, lessonIndex]
+                        'INSERT INTO lessons (id, title, description, type, content_url, duration_minutes, attachment_url, thumbnail_url, module_id, order_index) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                        [lessonId, lesson.title, lesson.description, lesson.type, lesson.contentUrl, lesson.duration, lesson.attachmentUrl, lesson.thumbnailUrl, moduleId, lessonIndex]
                     );
                 }
             }

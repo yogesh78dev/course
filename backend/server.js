@@ -1,3 +1,4 @@
+
 // backend/server.js
 require('dotenv').config(); // Load environment variables from .env file
 
@@ -17,6 +18,7 @@ const settingsRoutes = require('./routes/settingsRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const purchaseRoutes = require('./routes/purchaseRoutes');
 const promotionRoutes = require('./routes/promotionRoutes');
+const webinarRoutes = require('./routes/webinarRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -41,6 +43,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/student', studentRoutes);
 app.use('/api/student/purchase', purchaseRoutes);
 app.use('/api/promotions', promotionRoutes);
+app.use('/api/webinars', webinarRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
