@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import NotificationForm from './components/NotificationForm';
 import Modal from '../../components/ui/Modal';
@@ -7,6 +8,7 @@ import { NotificationTemplate } from '../../types';
 import { EditIcon, DeleteIcon, PlusIcon } from '../../components/icons/index';
 import Tooltip from '../../components/ui/Tooltip';
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
+import Pagination from '../../components/ui/Pagination';
 
 type NotificationTab = 'Compose' | 'Templates' | 'History';
 
@@ -17,6 +19,24 @@ const Notifications: React.FC = () => {
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState<NotificationTemplate | undefined>(undefined);
     const [templateToDelete, setTemplateToDelete] = useState<NotificationTemplate | null>(null);
+    
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeTab]);
+
+    const paginatedHistory = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return sentNotifications.slice(startIndex, startIndex + itemsPerPage);
+    }, [sentNotifications, currentPage]);
+
+    const paginatedTemplates = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return notificationTemplates.slice(startIndex, startIndex + itemsPerPage);
+    }, [notificationTemplates, currentPage]);
 
     const handleNotificationSent = () => {
         setActiveTab('History');
@@ -68,7 +88,7 @@ const Notifications: React.FC = () => {
                 );
             case 'Templates':
                 return (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b gap-2">
                             <h3 className="text-xl font-bold text-gray-800">Manage Templates</h3>
                             <button onClick={openAddTemplateModal} className="flex items-center bg-gray-100 text-gray-800 px-3 py-1.5 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-sm">
@@ -87,7 +107,7 @@ const Notifications: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
-                                    {notificationTemplates?.map(template => (
+                                    {paginatedTemplates.map(template => (
                                         <tr key={template.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="p-4 font-medium text-gray-900">{template.name}</td>
                                             <td className="p-4 text-gray-700 truncate max-w-xs" title={template.title}>{template.title}</td>
@@ -113,11 +133,17 @@ const Notifications: React.FC = () => {
                                 </div>
                             )}
                         </div>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={notificationTemplates.length}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={setCurrentPage}
+                        />
                     </div>
                 );
             case 'History':
                 return (
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                         <h3 className="text-xl font-bold text-gray-800 p-4 border-b">Sent History</h3>
                         <div className="overflow-x-auto">
                             <table className="w-full text-left min-w-[700px]">
@@ -130,7 +156,7 @@ const Notifications: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
-                                    {sentNotifications?.map(notif => (
+                                    {paginatedHistory.map(notif => (
                                         <tr key={notif.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="p-4 font-medium text-gray-900">{notif.title}</td>
                                             <td className="p-4 text-gray-700 max-w-sm truncate" title={notif.message}>{notif.message}</td>
@@ -146,6 +172,12 @@ const Notifications: React.FC = () => {
                                 </div>
                             )}
                         </div>
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={sentNotifications.length}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={setCurrentPage}
+                        />
                     </div>
                 );
         }
@@ -162,7 +194,7 @@ const Notifications: React.FC = () => {
                     <button
                         key={tab.name}
                         onClick={() => setActiveTab(tab.name)}
-                        className={`px-4 py-2 font-medium text-sm ${
+                        className={`px-4 py-2 font-medium text-sm transition-all ${
                             activeTab === tab.name
                                 ? 'border-b-2 border-primary text-primary'
                                 : 'text-gray-500 hover:text-gray-700'

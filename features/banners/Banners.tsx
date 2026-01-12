@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Promotion } from '../../types';
 import { PlusIcon, EditIcon, DeleteIcon, CheckIcon } from '../../components/icons/index';
@@ -7,12 +7,17 @@ import Modal from '../../components/ui/Modal';
 import BannerForm from './components/BannerForm';
 import Tooltip from '../../components/ui/Tooltip';
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
+import Pagination from '../../components/ui/Pagination';
 
 const Banners: React.FC = () => {
     const { promotions, deletePromotion, savePromotion } = useAppContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPromo, setEditingPromo] = useState<Promotion | undefined>(undefined);
     const [promoToDelete, setPromoToDelete] = useState<Promotion | null>(null);
+    
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const openAddModal = () => {
         setEditingPromo(undefined);
@@ -40,6 +45,11 @@ const Banners: React.FC = () => {
         savePromotion({ ...promo, isActive: !promo.isActive });
     };
 
+    const paginatedPromotions = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return promotions.slice(startIndex, startIndex + itemsPerPage);
+    }, [promotions, currentPage]);
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -62,7 +72,7 @@ const Banners: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {promotions?.map(promo => (
+                            {paginatedPromotions.map(promo => (
                                 <tr key={promo.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="p-4 w-40">
                                         <img src={promo.imageUrl} alt={promo.title} className="w-32 h-16 object-cover rounded-lg shadow-sm border border-gray-100" />
@@ -113,6 +123,12 @@ const Banners: React.FC = () => {
                         <p className="text-sm">Create banners to highlight special offers on the mobile app.</p>
                     </div>
                 )}
+                <Pagination
+                    currentPage={currentPage}
+                    totalItems={promotions.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                />
             </div>
             
             <Modal isOpen={isModalOpen} onClose={closeModal} title={editingPromo ? "Edit Banner" : "New Promotional Banner"} size="3xl">

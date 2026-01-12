@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Review, ReviewStatus } from '../../types';
 import { StarIcon, CheckIcon, EyeOffIcon, DeleteIcon } from '../../components/icons/index';
 import Tooltip from '../../components/ui/Tooltip';
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
+import Pagination from '../../components/ui/Pagination';
 
 const StarRating: React.FC<{ rating: number }> = ({ rating }) => (
     <div className="flex items-center">
@@ -17,10 +19,24 @@ const Reviews: React.FC = () => {
     const { reviews, users, courses, updateReviewStatus, deleteReview } = useAppContext();
     const [filterStatus, setFilterStatus] = useState<ReviewStatus | 'All'>('All');
     const [reviewToDelete, setReviewToDelete] = useState<Review | null>(null);
+    
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
-    const filteredReviews = filterStatus === 'All'
-        ? reviews
-        : reviews.filter(review => review.status === filterStatus);
+    const filteredReviews = useMemo(() => {
+        return filterStatus === 'All'
+            ? reviews
+            : reviews.filter(review => review.status === filterStatus);
+    }, [reviews, filterStatus]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filterStatus]);
+
+    const paginatedReviews = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return filteredReviews.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredReviews, currentPage]);
     
     const getReviewData = (review: Review) => {
         const user = users.find(u => u.id === review.userId);
@@ -64,14 +80,14 @@ const Reviews: React.FC = () => {
                      <button 
                         key={btn.value}
                         onClick={() => setFilterStatus(btn.value)}
-                        className={`px-4 py-2 font-medium text-sm flex-shrink-0 ${filterStatus === btn.value ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                        className={`px-4 py-2 font-medium text-sm flex-shrink-0 transition-all ${filterStatus === btn.value ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         {btn.label}
                     </button>
                 ))}
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left min-w-[900px]">
                         <thead className="bg-gray-50 border-b border-gray-200">
@@ -85,7 +101,7 @@ const Reviews: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {filteredReviews?.map(review => {
+                            {paginatedReviews.map(review => {
                                 const { user, course } = getReviewData(review);
                                 if (!user || !course) return null;
 
@@ -134,6 +150,12 @@ const Reviews: React.FC = () => {
                         No reviews found for this status.
                     </div>
                 )}
+                <Pagination
+                    currentPage={currentPage}
+                    totalItems={filteredReviews.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                />
             </div>
             <ConfirmationModal
                 isOpen={!!reviewToDelete}

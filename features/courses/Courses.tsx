@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Course, ReviewStatus } from '../../types';
 import { EditIcon, DeleteIcon, PlusIcon, StarIcon } from '../../components/icons/index';
@@ -6,6 +7,7 @@ import Modal from '../../components/ui/Modal';
 import CourseForm from './components/CourseForm';
 import Tooltip from '../../components/ui/Tooltip';
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
+import Pagination from '../../components/ui/Pagination';
 import * as api from '../../services/api';
 
 const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
@@ -26,6 +28,10 @@ const Courses: React.FC = () => {
     const [editingCourse, setEditingCourse] = useState<Course | undefined>(undefined);
     const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
     const [loadingCourseId, setLoadingCourseId] = useState<string | null>(null);
+    
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const openAddModal = () => {
         setEditingCourse(undefined);
@@ -35,12 +41,10 @@ const Courses: React.FC = () => {
     const openEditModal = async (course: Course) => {
         setLoadingCourseId(course.id);
         try {
-            // Fetch full course details including modules and lessons
             const res = await api.getCourseById(course.id);
             setEditingCourse(res.data);
             setIsModalOpen(true);
         } catch (error: any) {
-            console.error("Failed to fetch full course details:", error);
             addToast("Failed to load course curriculum. Please try again.", 'error');
         } finally {
             setLoadingCourseId(null);
@@ -69,15 +73,27 @@ const Courses: React.FC = () => {
         };
     };
 
-    const filteredCourses = courses.filter(course => {
-        const matchesCategory = filterCategory === 'All' || course.category === filterCategory;
-        const matchesType = filterType === 'All' 
-            ? true 
-            : filterType === 'Free' 
-                ? course.price == 0 
-                : course.price > 0;
-        return matchesCategory && matchesType;
-    });
+    const filteredCourses = useMemo(() => {
+        return courses.filter(course => {
+            const matchesCategory = filterCategory === 'All' || course.category === filterCategory;
+            const matchesType = filterType === 'All' 
+                ? true 
+                : filterType === 'Free' 
+                    ? course.price == 0 
+                    : course.price > 0;
+            return matchesCategory && matchesType;
+        });
+    }, [courses, filterCategory, filterType]);
+
+    // Reset page when filter changes
+    React.useEffect(() => {
+        setCurrentPage(1);
+    }, [filterCategory, filterType]);
+
+    const paginatedCourses = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return filteredCourses.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredCourses, currentPage]);
 
     return (
         <div className="space-y-6">
@@ -118,7 +134,7 @@ const Courses: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left min-w-[800px]">
                         <thead className="bg-gray-50 border-b border-gray-200">
@@ -132,7 +148,7 @@ const Courses: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {filteredCourses?.map(course => {
+                            {paginatedCourses.map(course => {
                                 const { avg, count } = getAverageRating(course.id);
                                 const instructor = instructors.find(i => i.id === course.instructorId);
                                 const isThisCourseLoading = loadingCourseId === course.id;
@@ -201,6 +217,12 @@ const Courses: React.FC = () => {
                         No courses found matching the filters.
                     </div>
                 )}
+                <Pagination
+                    currentPage={currentPage}
+                    totalItems={filteredCourses.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                />
             </div>
             
             <Modal isOpen={isModalOpen} onClose={closeModal} title={editingCourse ? "Edit Course" : "Add New Course"} size="5xl">

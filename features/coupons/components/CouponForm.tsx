@@ -21,14 +21,21 @@ const CouponForm: React.FC<CouponFormProps> = ({ coupon, onSave }) => {
     });
     const [loading, setLoading] = useState(false);
 
+    // Helper to format date for input field (must be YYYY-MM-DD)
+    const formatDateForInput = (dateStr: string) => {
+        if (!dateStr) return '';
+        // Handles cases where date might be an ISO string or include time
+        return dateStr.split('T')[0];
+    };
+
     useEffect(() => {
         if (coupon) {
             setFormData({
                 code: coupon.code,
                 type: coupon.type,
                 value: coupon.value,
-                startDate: coupon.startDate,
-                endDate: coupon.endDate,
+                startDate: formatDateForInput(coupon.startDate),
+                endDate: formatDateForInput(coupon.endDate),
                 usageLimit: coupon.usageLimit,
                 courseIds: coupon.courseIds,
                 firstTimeBuyerOnly: coupon.firstTimeBuyerOnly,

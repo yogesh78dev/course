@@ -1,10 +1,14 @@
-import React from 'react';
+
+import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../../context/AppContext';
 import Tooltip from '../../../components/ui/Tooltip';
+import Pagination from '../../../components/ui/Pagination';
 import { DownloadIcon, CheckIcon } from '../../../components/icons/index';
 
 const SalesView: React.FC = () => {
     const { sales, updateSaleStatus } = useAppContext();
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const getStatusClass = (status: 'Paid' | 'Pending' | 'Failed') => {
         switch (status) {
@@ -17,6 +21,11 @@ const SalesView: React.FC = () => {
         }
     };
 
+    const paginatedSales = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return sales.slice(startIndex, startIndex + itemsPerPage);
+    }, [sales, currentPage]);
+
     const downloadCSV = (data: any[], filename: string) => {
         if (data.length === 0) return;
         
@@ -28,9 +37,6 @@ const SalesView: React.FC = () => {
         
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
-        if (link.href) {
-            URL.revokeObjectURL(link.href);
-        }
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
         link.setAttribute('download', `${filename}.csv`);
@@ -54,7 +60,7 @@ const SalesView: React.FC = () => {
     
     return (
         <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 border-b gap-2">
                     <h3 className="text-lg font-semibold text-gray-800">Invoice Management</h3>
                     <Tooltip text="Download Invoices Report (CSV)">
@@ -78,7 +84,7 @@ const SalesView: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {sales?.map(sale => (
+                            {paginatedSales.map(sale => (
                                 <tr key={sale.id}>
                                     <td className="p-4 text-gray-700 font-mono text-sm">{sale.id}</td>
                                     <td className="p-4 text-gray-700">{sale.user.name}</td>
@@ -119,6 +125,12 @@ const SalesView: React.FC = () => {
                         No sales records found.
                     </div>
                 )}
+                <Pagination
+                    currentPage={currentPage}
+                    totalItems={sales.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                />
             </div>
         </div>
     );

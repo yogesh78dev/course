@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Webinar } from '../../types';
 import { PlusIcon, EditIcon, DeleteIcon, VideoIcon } from '../../components/icons/index';
@@ -7,12 +7,16 @@ import Modal from '../../components/ui/Modal';
 import WebinarForm from './components/WebinarForm';
 import Tooltip from '../../components/ui/Tooltip';
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
+import Pagination from '../../components/ui/Pagination';
 
 const Webinars: React.FC = () => {
     const { webinars, deleteWebinar, instructors } = useAppContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingWebinar, setEditingWebinar] = useState<Webinar | undefined>(undefined);
     const [webinarToDelete, setWebinarToDelete] = useState<Webinar | null>(null);
+    
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const openAddModal = () => {
         setEditingWebinar(undefined);
@@ -46,6 +50,11 @@ const Webinars: React.FC = () => {
         }
     }
 
+    const paginatedWebinars = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return webinars.slice(startIndex, startIndex + itemsPerPage);
+    }, [webinars, currentPage]);
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -56,7 +65,7 @@ const Webinars: React.FC = () => {
                 </button>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left min-w-[900px]">
                         <thead className="bg-gray-50 border-b border-gray-200">
@@ -70,7 +79,7 @@ const Webinars: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {webinars?.map(webinar => {
+                            {paginatedWebinars.map(webinar => {
                                 const presenter = instructors.find(i => i.id === webinar.presenterId);
                                 const priceDisplay = webinar.isFree ? 'Free' : (webinar.price ? `₹${Number(webinar.price).toFixed(2)}` : '₹0.00');
                                 
@@ -122,10 +131,16 @@ const Webinars: React.FC = () => {
                         No webinars scheduled.
                     </div>
                 )}
+                <Pagination
+                    currentPage={currentPage}
+                    totalItems={webinars.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                />
             </div>
             
             <Modal isOpen={isModalOpen} onClose={closeModal} title={editingWebinar ? "Edit Webinar" : "Create Webinar"} size="2xl">
-                <WebinarForm webinar={editingWebinar} onSave={closeModal}/>
+                < WebinarForm webinar={editingWebinar} onSave={closeModal}/>
             </Modal>
             <ConfirmationModal
                 isOpen={!!webinarToDelete}

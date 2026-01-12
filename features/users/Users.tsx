@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { User, UserRole } from '../../types';
 import { PlusIcon, EditIcon, DeleteIcon, KeyIcon } from '../../components/icons/index';
@@ -8,6 +8,7 @@ import UserForm from '../../components/ui/UserForm';
 import Tooltip from '../../components/ui/Tooltip';
 import UserEnrollmentsModal from '../../components/ui/UserEnrollmentsModal';
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
+import Pagination from '../../components/ui/Pagination';
 import * as api from '../../services/api';
 
 interface UsersProps {
@@ -22,6 +23,10 @@ const Users: React.FC<UsersProps> = ({ setIsStudentView }) => {
     const [isEnrollmentModalOpen, setIsEnrollmentModalOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     const openAddModal = () => {
         setEditingUser(undefined);
@@ -40,12 +45,10 @@ const Users: React.FC<UsersProps> = ({ setIsStudentView }) => {
     
     const openEnrollmentModal = async (user: User) => {
         try {
-            // FIX: Using correct API call from services.
             const res = await api.getStudentProfile(user.id);
             setSelectedUser(res.data);
             setIsEnrollmentModalOpen(true);
         } catch (error) {
-            console.error("Failed to fetch user enrollments:", error);
             addToast("Could not load user's enrollment data.", 'error');
         }
     };
@@ -57,12 +60,10 @@ const Users: React.FC<UsersProps> = ({ setIsStudentView }) => {
     
     const handleLoginAsStudent = async (user: User) => {
         try {
-            // FIX: Using correct API call from services.
             const res = await api.getStudentProfile(user.id);
             setCurrentStudent(res.data);
             setIsStudentView(true);
         } catch (error) {
-            console.error("Failed to fetch user profile for student view:", error);
             addToast("Could not load student profile.", 'error');
         }
     };
@@ -74,9 +75,20 @@ const Users: React.FC<UsersProps> = ({ setIsStudentView }) => {
         }
     };
 
-    const filteredUsers = filterRole === 'All'
-        ? users.filter(u => u.role !== UserRole.ADMIN)
-        : users.filter(user => user.role === filterRole);
+    const filteredUsers = useMemo(() => {
+        return filterRole === 'All'
+            ? users.filter(u => u.role !== UserRole.ADMIN)
+            : users.filter(user => user.role === filterRole);
+    }, [users, filterRole]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filterRole]);
+
+    const paginatedUsers = useMemo(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        return filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+    }, [filteredUsers, currentPage]);
 
     const getRoleClass = (role: UserRole) => {
         switch (role) {
@@ -95,7 +107,6 @@ const Users: React.FC<UsersProps> = ({ setIsStudentView }) => {
         }
     };
 
-    // Explicitly cast to UserRole[] for safe mapping
     const studentRoles = (Object.values(UserRole) as UserRole[]).filter(role => role !== UserRole.ADMIN);
 
     return (
@@ -126,7 +137,7 @@ const Users: React.FC<UsersProps> = ({ setIsStudentView }) => {
                 ))}
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left min-w-[900px]">
                         <thead className="bg-gray-50 border-b border-gray-200">
@@ -140,7 +151,7 @@ const Users: React.FC<UsersProps> = ({ setIsStudentView }) => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {filteredUsers?.map(user => (
+                            {paginatedUsers.map(user => (
                                 <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="p-4 flex items-center">
                                         <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover mr-4"/>
@@ -192,6 +203,12 @@ const Users: React.FC<UsersProps> = ({ setIsStudentView }) => {
                         No users found for this role.
                     </div>
                 )}
+                <Pagination
+                    currentPage={currentPage}
+                    totalItems={filteredUsers.length}
+                    itemsPerPage={itemsPerPage}
+                    onPageChange={setCurrentPage}
+                />
             </div>
             <Modal isOpen={isModalOpen} onClose={closeModal} title={editingUser ? "Edit User" : "Add New User"}>
                 <UserForm user={editingUser} onSave={closeModal}/>

@@ -3,6 +3,26 @@ const db = require('../db');
 const asyncHandler = require('../utils/asyncHandler');
 const { v4: uuidv4 } = require('uuid');
 
+/**
+ * Maps database row to Frontend Coupon interface
+ */
+const mapCouponFromDb = (row) => {
+    if (!row) return null;
+    return {
+        id: row.id,
+        code: row.code,
+        type: row.type,
+        value: parseFloat(row.value),
+        startDate: row.start_date,
+        endDate: row.end_date,
+        usageLimit: row.usage_limit,
+        firstTimeBuyerOnly: !!row.first_time_buyer_only,
+        createdAt: row.created_at,
+        usageCount: row.usageCount || 0,
+        courseIds: row.courseIds || []
+    };
+};
+
 const getCoupons = asyncHandler(async (req, res) => {
     const [coupons] = await db.query('SELECT * FROM coupons ORDER BY created_at DESC');
     const [usage] = await db.query('SELECT coupon_id, COUNT(*) as count FROM coupon_usage GROUP BY coupon_id');
@@ -15,7 +35,7 @@ const getCoupons = asyncHandler(async (req, res) => {
         return acc;
     }, {});
 
-    const results = coupons.map(c => ({
+    const results = coupons.map(c => mapCouponFromDb({
         ...c,
         usageCount: usageMap[c.id] || 0,
         courseIds: coursesMap[c.id] || []
@@ -25,6 +45,7 @@ const getCoupons = asyncHandler(async (req, res) => {
 });
 
 const createCoupon = asyncHandler(async (req, res) => {
+    // Accepting camelCase from frontend
     const { code, type, value, startDate, endDate, usageLimit, courseIds, firstTimeBuyerOnly } = req.body;
     const couponId = uuidv4();
     
@@ -44,8 +65,8 @@ const createCoupon = asyncHandler(async (req, res) => {
         
         await connection.commit();
         
-        const [newCouponRows] = await db.query('SELECT * FROM coupons WHERE id = ?', [couponId]);
-        const responseData = { ...newCouponRows[0], usageCount: 0, courseIds: courseIds || [] };
+        const [[newCouponRows]] = await db.query('SELECT * FROM coupons WHERE id = ?', [couponId]);
+        const responseData = mapCouponFromDb({ ...newCouponRows[0], usageCount: 0, courseIds: courseIds || [] });
         res.status(201).json({ message: 'Coupon created.', data: responseData });
 
     } catch (e) {
@@ -58,6 +79,7 @@ const createCoupon = asyncHandler(async (req, res) => {
 
 const updateCoupon = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    // Accepting camelCase from frontend
     const { code, type, value, startDate, endDate, usageLimit, courseIds, firstTimeBuyerOnly } = req.body;
 
     const connection = await db.pool.getConnection();
@@ -85,7 +107,7 @@ const updateCoupon = asyncHandler(async (req, res) => {
         const [[updatedCoupon]] = await db.query('SELECT * FROM coupons WHERE id = ?', [id]);
         const [[usage]] = await db.query('SELECT COUNT(*) as count FROM coupon_usage WHERE coupon_id = ?', [id]);
         
-        const responseData = { ...updatedCoupon, usageCount: usage.count, courseIds: courseIds || [] };
+        const responseData = mapCouponFromDb({ ...updatedCoupon, usageCount: usage.count, courseIds: courseIds || [] });
         res.json({ message: `Coupon ${id} updated.`, data: responseData });
 
     } catch (e) {
