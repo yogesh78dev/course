@@ -5,14 +5,20 @@ const { protect, admin } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
-router.use(protect, admin);
+/**
+ * Public route: Fetch instructors list
+ * This allows the student mobile app and other clients to display instructor profiles.
+ */
+router.get('/', getInstructors);
 
-router.route('/')
-    .get(getInstructors)
-    .post(createInstructor);
+/**
+ * Admin-only routes: Manage instructors
+ * Mutations remain protected to prevent unauthorized modifications.
+ */
+router.post('/', protect, admin, createInstructor);
 
 router.route('/:id')
-    .put(updateInstructor)
-    .delete(deleteInstructor);
+    .put(protect, admin, updateInstructor)
+    .delete(protect, admin, deleteInstructor);
 
 module.exports = router;

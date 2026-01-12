@@ -199,3 +199,11 @@ export interface Certificate {
   courseTitle?: string;
   instructorName?: string;
 }
+
+export interface Promotion {
+    id: string;
+    title: string;
+    description: string;
+    imageUrl: string;
+    isActive: boolean;
+}

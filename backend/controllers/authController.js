@@ -5,8 +5,17 @@ const { v4: uuidv4 } = require('uuid');
 const crypto = require('crypto');
 const db = require('../db');
 const asyncHandler = require('../utils/asyncHandler');
+const nodemailer = require("nodemailer");
 
 const JWT_SECRET = process.env.JWT_SECRET;
+
+const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+    },
+});
 
 const getFullUserForResponse = async (userId) => {
     const query = `
@@ -21,14 +30,23 @@ const getFullUserForResponse = async (userId) => {
 };
 
 const sendRegistrationEmail = async (email, otp) => {
-  // In a real application, you would use an email service like Nodemailer, SendGrid, etc.
-  console.log('--- SIMULATING REGISTRATION OTP EMAIL ---');
-  console.log(`To: ${email}`);
-  console.log(`Subject: Welcome! Your Verification Code`);
-  console.log(`Your verification code is: ${otp}`);
-  console.log('This code will expire in 10 minutes.');
-  console.log('------------------------------------');
-  return Promise.resolve();
+
+    const mailOptions = {
+        from: `"CreatorGuru" <${process.env.GMAIL_USER}>`,
+        to: email,
+        subject: "Your OTP Verification Code",
+        html: `
+            <div style="font-family: Arial, sans-serif;">
+                <h2>Email Verification</h2>
+                <p>Your OTP code is:</p>
+                <h1 style="letter-spacing: 4px;">${otp}</h1>
+                <p>This OTP will expire in <b>10 minutes</b>.</p>
+                <p>If you didn’t request this, please ignore.</p>
+            </div>
+        `,
+    };
+
+    await transporter.sendMail(mailOptions);
 };
 
 const loginAdmin = asyncHandler(async (req, res) => {
@@ -74,7 +92,8 @@ const registerSendOtp = asyncHandler(async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
     // const otp = crypto.randomInt(100000, 999999).toString();
-    const otp = "123456";
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    // const otp = "1234";
     const expires_at = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     await db.query(
@@ -230,16 +249,32 @@ const loginWithGmail = asyncHandler(async (req, res) => {
 
 // --- Password Reset ---
 
+// const sendPasswordResetEmail = async (email, otp) => {
+//   // In a real application, you would use an email service like Nodemailer, SendGrid, etc.
+//   // For this project, we will simulate the email by logging it to the console.
+//   console.log('--- SIMULATING PASSWORD RESET EMAIL ---');
+//   console.log(`To: ${email}`);
+//   console.log(`Subject: Your Password Reset Code`);
+//   console.log(`Your password reset code is: ${otp}`);
+//   console.log('This code will expire in 10 minutes.');
+//   console.log('------------------------------------');
+//   return Promise.resolve();
+// };
 const sendPasswordResetEmail = async (email, otp) => {
-  // In a real application, you would use an email service like Nodemailer, SendGrid, etc.
-  // For this project, we will simulate the email by logging it to the console.
-  console.log('--- SIMULATING PASSWORD RESET EMAIL ---');
-  console.log(`To: ${email}`);
-  console.log(`Subject: Your Password Reset Code`);
-  console.log(`Your password reset code is: ${otp}`);
-  console.log('This code will expire in 10 minutes.');
-  console.log('------------------------------------');
-  return Promise.resolve();
+    await transporter.sendMail({
+        from: `"CreatorGuru" <${process.env.GMAIL_USER}>`,
+        to: email,
+        subject: "Password Reset OTP",
+        html: `
+            <div style="font-family: Arial, sans-serif;">
+                <h2>Password Reset Request</h2>
+                <p>Your OTP code is:</p>
+                <h1 style="letter-spacing: 4px;">${otp}</h1>
+                <p>This OTP will expire in <b>10 minutes</b>.</p>
+                <p>If you did not request this, please ignore this email.</p>
+            </div>
+        `,
+    });
 };
 
 const forgotPassword = asyncHandler(async (req, res) => {
@@ -253,7 +288,8 @@ const forgotPassword = asyncHandler(async (req, res) => {
     const user = rows[0];
 
     // Generate a 6-digit OTP
-    const otp = crypto.randomInt(100000, 999999).toString();
+    // const otp = crypto.randomInt(100000, 999999).toString();
+    const otp = Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit OTP
     const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 
     await db.query(
@@ -278,7 +314,9 @@ const resendOtp = asyncHandler(async (req, res) => {
     const user = rows[0];
 
     // Generate a new 6-digit OTP
-    const otp = crypto.randomInt(100000, 999999).toString();
+    // const otp = crypto.randomInt(100000, 999999).toString();
+    const otp = Math.floor(1000 + Math.random() * 9000).toString(); // 4-digit OTP
+
     const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes from now
 
     await db.query(

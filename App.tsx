@@ -8,7 +8,7 @@ import StudentHeader from './components/layout/StudentHeader';
 import { ToastContainer } from './components/ui/Toast';
 import ConfirmationModal from './components/ui/ConfirmationModal';
 
-export type View = 'Dashboard' | 'Courses' | 'Instructors' | 'Users' | 'Sales & Analytics' | 'Coupons' | 'Reviews' | 'Notifications' | 'Settings' | 'Webinars' | 'Vimeo';
+export type View = 'Dashboard' | 'Courses' | 'Instructors' | 'Users' | 'Sales & Analytics' | 'Coupons' | 'Reviews' | 'Notifications' | 'Settings' | 'Webinars' | 'Vimeo' | 'Banners';
 
 const LoadingSpinner: React.FC = () => (
     <div className="flex justify-center items-center h-full w-full min-h-[50vh]">
@@ -27,6 +27,7 @@ const CouponsView = React.lazy(() => import('./features/coupons/Coupons'));
 const NotificationsView = React.lazy(() => import('./features/notifications/Notifications'));
 const WebinarsView = React.lazy(() => import('./features/webinars/Webinars'));
 const VimeoView = React.lazy(() => import('./features/vimeo/Vimeo'));
+const BannersView = React.lazy(() => import('./features/banners/Banners'));
 
 const App: React.FC = () => {
     const [currentView, setCurrentView] = useState<View>('Dashboard');
@@ -86,24 +87,6 @@ const App: React.FC = () => {
         }
     };
 
-    const renderView = () => {
-        switch (currentView) {
-            case 'Dashboard': return <DashboardView />;
-            case 'Courses': return <DashboardView />; // Fallback or logic here if needed
-            case 'Instructors': return <InstructorsView />;
-            case 'Users': return <UsersView setIsStudentView={setIsStudentView} />;
-            case 'Sales & Analytics': return <SalesAnalyticsView />;
-            case 'Coupons': return <CouponsView />;
-            case 'Reviews': return <ReviewsView />;
-            case 'Notifications': return <NotificationsView />;
-            case 'Settings': return <SettingsView />;
-            case 'Webinars': return <WebinarsView />;
-            case 'Vimeo': return <VimeoView />;
-            default: return <DashboardView />;
-        }
-    };
-
-    // Re-fixing direct lazy mapping for CoursesView as the previous change snippet was incomplete
     const ActualView = () => {
         switch (currentView) {
             case 'Dashboard': return <DashboardView />;
@@ -117,6 +100,7 @@ const App: React.FC = () => {
             case 'Settings': return <SettingsView />;
             case 'Webinars': return <WebinarsView />;
             case 'Vimeo': return <VimeoView />;
+            case 'Banners': return <BannersView />;
             default: return <DashboardView />;
         }
     }

@@ -1,19 +1,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useRef } from 'react';
-import { User, Course, Sale, Category, Notification, UserRole, Review, ReviewStatus, Coupon, SentNotification, NotificationTemplate, Instructor, Webinar, VimeoVideo, VimeoAccount } from '../types';
+import { User, Course, Sale, Category, Notification, UserRole, Review, ReviewStatus, Coupon, SentNotification, NotificationTemplate, Instructor, Webinar, VimeoVideo, VimeoAccount, Promotion } from '../types';
 import * as api from '../services/api';
-
-interface Promotion {
-    show: boolean;
-    title: string;
-    description: string;
-}
-
-export interface Toast {
-    id: number;
-    message: string;
-    type: 'success' | 'error';
-}
 
 interface AppContextType {
     courses: Course[];
@@ -38,6 +26,7 @@ interface AppContextType {
     setWebinars: React.Dispatch<React.SetStateAction<Webinar[]>>;
     vimeoVideos: VimeoVideo[];
     vimeoAccounts: VimeoAccount[];
+    promotions: Promotion[];
     addVimeoAccount: (name: string, apiKey: string) => Promise<void>;
     removeVimeoAccount: (id: number) => Promise<void>;
     syncVimeoVideos: () => Promise<void>;
@@ -66,17 +55,26 @@ interface AppContextType {
     addWebinar: (webinar: Omit<Webinar, 'id'>) => Promise<void>;
     updateWebinar: (webinar: Webinar) => Promise<void>;
     deleteWebinar: (id: string) => Promise<void>;
+    savePromotion: (promo: Partial<Promotion>) => Promise<void>;
+    deletePromotion: (id: string) => Promise<void>;
+    // Fix: Added missing properties used by PromotionPopup.tsx
+    promotion: { show: boolean; title: string; description: string };
+    setPromotion: React.Dispatch<React.SetStateAction<{ show: boolean; title: string; description: string }>>;
     currentStudent: User | null;
     setCurrentStudent: React.Dispatch<React.SetStateAction<User | null>>;
     loading: boolean;
     error: string | null;
     fetchAllData: () => Promise<void>;
     clearAllData: () => void;
-    promotion: Promotion;
-    setPromotion: React.Dispatch<React.SetStateAction<Promotion>>;
     toasts: Toast[];
     addToast: (message: string, type: 'success' | 'error') => number;
     removeToast: (id: number) => void;
+}
+
+export interface Toast {
+    id: number;
+    message: string;
+    type: 'success' | 'error';
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -95,7 +93,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [webinars, setWebinars] = useState<Webinar[]>([]);
     const [vimeoVideos, setVimeoVideos] = useState<VimeoVideo[]>([]);
     const [vimeoAccounts, setVimeoAccounts] = useState<VimeoAccount[]>([]);
-    const [promotion, setPromotion] = useState<Promotion>({ show: false, title: '', description: '' });
+    const [promotions, setPromotions] = useState<Promotion[]>([]);
+    // Fix: Added missing state for PromotionPopup.tsx
+    const [promotion, setPromotion] = useState({ show: false, title: '', description: '' });
     const [currentStudent, setCurrentStudent] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -120,13 +120,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             const [
                 coursesRes, usersRes, salesRes, categoriesRes, instructorsRes, 
                 reviewsRes, couponsRes, templatesRes, historyRes, webinarsRes,
-                vimeoAccountsData, vimeoVideosData
+                vimeoAccountsData, vimeoVideosData, promotionsRes
             ] = await Promise.all([
                 api.getCourses(), api.getUsers(), api.getSales(), api.getCategories(),
                 api.getInstructors(), api.getReviews(), api.getCoupons(),
                 api.getNotificationTemplates(), api.getNotificationHistory(), api.getWebinars(),
-                api.getVimeoAccounts().catch(() => []), // Return empty array on failure
-                api.getVimeoVideos().catch(() => [])   // Return empty array on failure
+                api.getVimeoAccounts().catch(() => []), 
+                api.getVimeoVideos().catch(() => []),
+                api.getPromotions().catch(() => ({ data: [] }))
             ]);
 
             setCourses(coursesRes.data || []);
@@ -139,8 +140,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setNotificationTemplates(templatesRes.data || []);
             setSentNotifications(historyRes.data || []);
             setWebinars(webinarsRes.data || []);
+            setPromotions(promotionsRes.data || []);
             
-            // Vimeo API returns direct arrays, not wrapped in { data: [] }
             setVimeoAccounts(Array.isArray(vimeoAccountsData) ? vimeoAccountsData : []);
             setVimeoVideos(Array.isArray(vimeoVideosData) ? vimeoVideosData : []);
             
@@ -159,7 +160,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setCourses([]); setUsers([]); setSales([]); setCategories([]);
         setInstructors([]); setNotifications([]); setReviews([]); setCoupons([]);
         setSentNotifications([]); setNotificationTemplates([]); setWebinars([]); setCurrentStudent(null);
-        setVimeoVideos([]); setVimeoAccounts([]);
+        setVimeoVideos([]); setVimeoAccounts([]); setPromotions([]);
     }, []);
     
     const performApiCall = useCallback(async <T,>(apiCall: () => Promise<T>, successMessage: string, errorMessage: string) => {
@@ -331,12 +332,35 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setWebinars(prev => prev.filter(w => w.id !== id));
     }, 'Webinar deleted successfully.', 'Failed to delete webinar.'), [performApiCall]);
 
+    const savePromotion = useCallback((promo: Partial<Promotion>) => performApiCall(async () => {
+        const res = await api.savePromotion(promo);
+        if (promo.isActive) {
+            // If the new/updated promo is active, we need to refresh all to get updated is_active flags
+            const allPromos = await api.getPromotions();
+            setPromotions(allPromos.data);
+        } else {
+             setPromotions(prev => {
+                const index = prev.findIndex(p => p.id === res.data.id);
+                if (index > -1) {
+                    return prev.map(p => p.id === res.data.id ? res.data : p);
+                }
+                return [res.data, ...prev];
+            });
+        }
+    }, 'Promotion saved successfully!', 'Failed to save promotion.'), [performApiCall]);
+
+    const deletePromotion = useCallback((id: string) => performApiCall(async () => {
+        await api.deletePromotion(id);
+        setPromotions(prev => prev.filter(p => p.id !== id));
+    }, 'Promotion deleted successfully.', 'Failed to delete promotion.'), [performApiCall]);
+
     return (
         <AppContext.Provider value={{ 
             courses, setCourses, users, setUsers, sales, setSales, 
             categories, setCategories, instructors, setInstructors, notifications, setNotifications,
             reviews, setReviews, coupons, setCoupons, sentNotifications,
             notificationTemplates, webinars, setWebinars, vimeoVideos, vimeoAccounts,
+            promotions,
             addVimeoAccount, removeVimeoAccount, syncVimeoVideos,
             addCourse, updateCourse, deleteCourse,
             addCategory, deleteCategory, updateCategory,
@@ -348,10 +372,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             addNotificationTemplate, updateNotificationTemplate, deleteNotificationTemplate,
             updateSaleStatus,
             addWebinar, updateWebinar, deleteWebinar,
+            savePromotion, deletePromotion,
+            // Fix: Included missing state in provider value
+            promotion, setPromotion,
             currentStudent, setCurrentStudent,
             loading, error,
             fetchAllData, clearAllData,
-            promotion, setPromotion,
             toasts, addToast, removeToast,
         }}>
             {children}

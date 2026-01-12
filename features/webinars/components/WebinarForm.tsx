@@ -12,6 +12,8 @@ interface WebinarFormProps {
 
 const WebinarForm: React.FC<WebinarFormProps> = ({ webinar, onSave }) => {
     const { addWebinar, updateWebinar, instructors, vimeoVideos } = useAppContext();
+    const [meetingUrlSource, setMeetingUrlSource] = useState<'custom' | 'vimeo'>('custom');
+    
     const [formData, setFormData] = useState({
         title: '',
         description: '',
@@ -34,6 +36,10 @@ const WebinarForm: React.FC<WebinarFormProps> = ({ webinar, onSave }) => {
             // Handling timezone offset for datetime-local input
             const tzOffset = date.getTimezoneOffset() * 60000;
             const localISOTime = (new Date(date.getTime() - tzOffset)).toISOString().slice(0, 16);
+
+            // Determine if meeting URL is from vimeo
+            const isVimeoMeeting = webinar.meetingUrl && vimeoVideos.some(v => v.link === webinar.meetingUrl);
+            if (isVimeoMeeting) setMeetingUrlSource('vimeo');
 
             setFormData({
                 title: webinar.title,
@@ -70,7 +76,7 @@ const WebinarForm: React.FC<WebinarFormProps> = ({ webinar, onSave }) => {
                 price: 0
             });
         }
-    }, [webinar, instructors]);
+    }, [webinar, instructors, vimeoVideos]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
@@ -161,9 +167,51 @@ const WebinarForm: React.FC<WebinarFormProps> = ({ webinar, onSave }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {formData.type === 'Live' ? (
-                     <div className="md:col-span-2">
-                        <label htmlFor="meetingUrl" className="block text-sm font-medium text-gray-700 mb-1">Meeting Link (Zoom/Google Meet)</label>
-                        <input type="url" id="meetingUrl" name="meetingUrl" value={formData.meetingUrl} onChange={handleChange} placeholder="https://..." className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" />
+                     <div className="md:col-span-2 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <label className="block text-sm font-medium text-gray-700">Meeting Link Source</label>
+                            <div className="inline-flex rounded-md shadow-sm" role="group">
+                                <button
+                                    type="button"
+                                    onClick={() => setMeetingUrlSource('custom')}
+                                    className={`px-4 py-1.5 text-xs font-bold rounded-l-lg border ${meetingUrlSource === 'custom' ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                                >
+                                    Custom URL
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setMeetingUrlSource('vimeo')}
+                                    className={`px-4 py-1.5 text-xs font-bold rounded-r-lg border ${meetingUrlSource === 'vimeo' ? 'bg-primary text-white border-primary' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                                >
+                                    Vimeo Video
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {meetingUrlSource === 'custom' ? (
+                            <input 
+                                type="url" 
+                                id="meetingUrl" 
+                                name="meetingUrl" 
+                                value={formData.meetingUrl} 
+                                onChange={handleChange} 
+                                placeholder="https://zoom.us/j/..." 
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" 
+                                required
+                            />
+                        ) : (
+                            <select 
+                                id="meetingUrl" 
+                                name="meetingUrl" 
+                                value={formData.meetingUrl} 
+                                onChange={handleChange} 
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300"
+                                required
+                            >
+                                <option value="">-- Select a Vimeo Video --</option>
+                                {vimeoVideos?.map(vid => <option key={vid.id} value={vid.link}>{vid.title}</option>)}
+                            </select>
+                        )}
                     </div>
                 ) : (
                     <div className="md:col-span-2">

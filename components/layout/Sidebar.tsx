@@ -3,6 +3,13 @@ import React from 'react';
 import type { View } from '../../App';
 import { DashboardIcon, CoursesIcon, UsersIcon, SalesIcon, ReviewsIcon, SettingsIcon, CouponIcon, BellIcon, InstructorIcon, LogoutIcon, CloseIcon, WebinarIcon, VideoIcon } from '../icons/index';
 
+// Reusing photograph icon for banners
+const PhotographIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    </svg>
+);
+
 interface SidebarProps {
     isOpen: boolean;
     setIsOpen: (isOpen: boolean) => void;
@@ -24,6 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentView, setCu
         { name: 'Coupons', icon: <CouponIcon className="w-6 h-6" /> },
         { name: 'Reviews', icon: <ReviewsIcon className="w-6 h-6" /> },
         { name: 'Notifications', icon: <BellIcon className="w-6 h-6" /> },
+        { name: 'Banners', icon: <PhotographIcon className="w-6 h-6" /> },
         { name: 'Settings', icon: <SettingsIcon className="w-6 h-6" /> },
     ];
 

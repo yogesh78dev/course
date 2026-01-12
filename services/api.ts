@@ -1,9 +1,9 @@
 
-import { User, Course, Sale, Category, Notification, Review, ReviewStatus, Coupon, SentNotification, NotificationTemplate, Instructor, Webinar, VimeoAccount, VimeoVideo } from "../types";
+import { User, Course, Sale, Category, Notification, Review, ReviewStatus, Coupon, SentNotification, NotificationTemplate, Instructor, Webinar, VimeoAccount, VimeoVideo, Promotion } from "../types";
 
 // const API_BASE_URL = 'http://72.60.99.203:5000/api';
-// const API_BASE_URL = 'https://admin.creatorguru.in/api';
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://admin.creatorguru.in/api';
+// const API_BASE_URL = 'http://localhost:5000/api';
 
 // Shared request helper
 const request = async (url: string, options: RequestInit = {}) => {
@@ -159,3 +159,11 @@ export const addVimeoAccount = (data: { name: string, apiKey: string }): Promise
 export const removeVimeoAccount = (id: number) => request(`/vimeo/accounts/${id}`, { method: 'DELETE' });
 export const getVimeoVideos = (): Promise<VimeoVideo[]> => request('/vimeo/videos');
 export const syncVimeoVideos = (): Promise<VimeoVideo[]> => request('/vimeo/sync', { method: 'POST' });
+
+// Promotions (Banners)
+export const getPromotions = (): Promise<{ data: Promotion[] }> => request('/promotions');
+export const savePromotion = (data: Partial<Promotion>): Promise<{ data: Promotion }> => request('/promotions', {
+    method: 'POST',
+    body: JSON.stringify(data),
+});
+export const deletePromotion = (id: string) => request(`/promotions/${id}`, { method: 'DELETE' });

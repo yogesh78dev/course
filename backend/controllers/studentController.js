@@ -298,7 +298,7 @@ const getEnrolledCourseDetails = asyncHandler(async (req, res) => {
     
     const [moduleRows] = await db.query('SELECT * FROM modules WHERE course_id = ? ORDER BY order_index ASC', [courseId]);
     const [lessonRows] = await db.query(
-        `SELECT l.id, l.title, l.description, l.type, l.content_url as "contentUrl", l.duration_minutes as "duration", l.attachment_url as "attachmentUrl", l.module_id 
+        `SELECT l.id, l.title, l.description, l.type, l.content_url as "contentUrl", l.duration_minutes as "duration", l.attachment_url as "attachmentUrl",l.thumbnail_url as "thumbnailUrl", l.module_id 
         FROM lessons l
         WHERE l.module_id IN (SELECT id FROM modules WHERE course_id = ?) 
         ORDER BY l.order_index ASC`, 

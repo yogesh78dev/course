@@ -208,3 +208,11 @@ export interface VimeoVideo {
     thumbnail_url: string;
     upload_date: string;
 }
+
+export interface Promotion {
+    id: string;
+    title: string;
+    description: string;
+    imageUrl: string;
+    isActive: boolean;
+}
