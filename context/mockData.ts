@@ -1,3 +1,4 @@
+
 import { User, Course, Sale, Category, Notification, UserRole, Review, ReviewStatus, Coupon, CouponType, SentNotification, NotificationTarget, NotificationActionType, NotificationChannel, NotificationTemplate, Instructor } from '../types';
 
 // MOCK DATA
@@ -9,11 +10,11 @@ export const initialCategories: Category[] = [
 ];
 
 export const vimeoVideos = [
-    { id: 'vid-1', title: 'Introduction to React', url: 'https://vimeo.com/123456' },
-    { id: 'vid-2', title: 'State and Props', url: 'https://vimeo.com/123457' },
-    { id: 'vid-3', title: 'Python Basics', url: 'https://vimeo.com/234567' },
-    { id: 'vid-4', title: 'Data Analysis with Pandas', url: 'https://vimeo.com/234568' },
-    { id: 'vid-5', title: 'Design Principles', url: 'https://vimeo.com/345678' },
+    { id: 'vid-1', title: 'Introduction to React', link: 'https://vimeo.com/123456' },
+    { id: 'vid-2', title: 'State and Props', link: 'https://vimeo.com/123457' },
+    { id: 'vid-3', title: 'Python Basics', link: 'https://vimeo.com/234567' },
+    { id: 'vid-4', title: 'Data Analysis with Pandas', link: 'https://vimeo.com/234568' },
+    { id: 'vid-5', title: 'Design Principles', link: 'https://vimeo.com/345678' },
 ];
 
 export const initialInstructors: Instructor[] = [
@@ -106,16 +107,12 @@ export const initialCourses: Course[] = [
 ];
 
 export const initialUsers: User[] = [
-    // FIX: Added missing 'status' and 'phoneNumber' properties.
     { id: 'usr-1', name: 'Alice Johnson', email: 'alice@example.com', role: UserRole.GOLD_MEMBER, joinedDate: '2023-01-15', avatar: 'https://picsum.photos/seed/alice/100', enrolledCourses: [], watchHistory: [], status: 'Active', phoneNumber: null },
-    // FIX: Added missing 'status' and 'phoneNumber' properties.
     { id: 'usr-2', name: 'Bob Williams', email: 'bob@example.com', role: UserRole.STUDENT, joinedDate: '2023-02-20', avatar: 'https://picsum.photos/seed/bob/100', enrolledCourses: [], watchHistory: [
         { courseId: 'crs-1', lessonId: 'les-1', watchedAt: '2023-06-10T10:00:00Z', progress: 100 },
         { courseId: 'crs-1', lessonId: 'les-3', watchedAt: '2023-06-11T11:30:00Z', progress: 50 },
     ], status: 'Active', phoneNumber: null },
-    // FIX: Added missing 'status' and 'phoneNumber' properties.
     { id: 'usr-3', name: 'Charlie Brown', email: 'charlie@example.com', role: UserRole.STUDENT, joinedDate: '2023-03-10', avatar: 'https://picsum.photos/seed/charlie/100', enrolledCourses: [], watchHistory: [], status: 'Active', phoneNumber: null },
-    // FIX: Added missing 'status' and 'phoneNumber' properties.
     { id: 'usr-4', name: 'Admin User', email: 'admin@example.com', role: UserRole.ADMIN, joinedDate: '2022-12-01', avatar: 'https://picsum.photos/seed/admin/100', enrolledCourses: [], watchHistory: [], status: 'Active', phoneNumber: null },
 ];
 

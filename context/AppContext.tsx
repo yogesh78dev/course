@@ -1,9 +1,8 @@
 
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { User, Course, Sale, Category, Notification, UserRole, Review, ReviewStatus, Coupon, SentNotification, NotificationTemplate, Instructor, Webinar } from '../types';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useRef } from 'react';
+import { User, Course, Sale, Category, Notification, UserRole, Review, ReviewStatus, Coupon, SentNotification, NotificationTemplate, Instructor, Webinar, VimeoVideo, VimeoAccount } from '../types';
 import * as api from '../services/api';
 
-// FIX: Add Promotion interface for promotion popup state
 interface Promotion {
     show: boolean;
     title: string;
@@ -37,7 +36,11 @@ interface AppContextType {
     notificationTemplates: NotificationTemplate[];
     webinars: Webinar[];
     setWebinars: React.Dispatch<React.SetStateAction<Webinar[]>>;
-    vimeoVideos: { id: string; title: string; url: string; }[];
+    vimeoVideos: VimeoVideo[];
+    vimeoAccounts: VimeoAccount[];
+    addVimeoAccount: (name: string, apiKey: string) => Promise<void>;
+    removeVimeoAccount: (id: number) => Promise<void>;
+    syncVimeoVideos: () => Promise<void>;
     addCourse: (course: Omit<Course, 'id'>) => Promise<void>;
     updateCourse: (course: Course) => Promise<void>;
     deleteCourse: (id: string) => Promise<void>;
@@ -69,23 +72,14 @@ interface AppContextType {
     error: string | null;
     fetchAllData: () => Promise<void>;
     clearAllData: () => void;
-    // FIX: Add promotion and setPromotion to context type
     promotion: Promotion;
     setPromotion: React.Dispatch<React.SetStateAction<Promotion>>;
     toasts: Toast[];
-    addToast: (message: string, type: 'success' | 'error') => void;
+    addToast: (message: string, type: 'success' | 'error') => number;
     removeToast: (id: number) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
-
-const vimeoVideos = [
-    { id: 'vid-1', title: 'Introduction to React', url: 'https://vimeo.com/123456' },
-    { id: 'vid-2', title: 'State and Props', url: 'https://vimeo.com/123457' },
-    { id: 'vid-3', title: 'Python Basics', url: 'https://vimeo.com/234567' },
-    { id: 'vid-4', title: 'Data Analysis with Pandas', url: 'https://vimeo.com/234568' },
-    { id: 'vid-5', title: 'Design Principles', url: 'https://vimeo.com/345678' },
-];
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [courses, setCourses] = useState<Course[]>([]);
@@ -99,14 +93,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [sentNotifications, setSentNotifications] = useState<SentNotification[]>([]);
     const [notificationTemplates, setNotificationTemplates] = useState<NotificationTemplate[]>([]);
     const [webinars, setWebinars] = useState<Webinar[]>([]);
+    const [vimeoVideos, setVimeoVideos] = useState<VimeoVideo[]>([]);
+    const [vimeoAccounts, setVimeoAccounts] = useState<VimeoAccount[]>([]);
     const [promotion, setPromotion] = useState<Promotion>({ show: false, title: '', description: '' });
     const [currentStudent, setCurrentStudent] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [toasts, setToasts] = useState<Toast[]>([]);
+    const toastIdCounter = useRef(0);
 
     const addToast = useCallback((message: string, type: 'success' | 'error') => {
-        setToasts(prev => [...prev, { id: Date.now(), message, type }]);
+        const id = ++toastIdCounter.current;
+        setToasts(prev => [...prev, { id, message, type }]);
+        return id;
     }, []);
 
     const removeToast = useCallback((id: number) => {
@@ -117,32 +116,40 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         try {
             setLoading(true);
             setError(null);
+            
             const [
                 coursesRes, usersRes, salesRes, categoriesRes, instructorsRes, 
-                reviewsRes, couponsRes, templatesRes, historyRes, webinarsRes
+                reviewsRes, couponsRes, templatesRes, historyRes, webinarsRes,
+                vimeoAccountsData, vimeoVideosData
             ] = await Promise.all([
                 api.getCourses(), api.getUsers(), api.getSales(), api.getCategories(),
                 api.getInstructors(), api.getReviews(), api.getCoupons(),
-                api.getNotificationTemplates(), api.getNotificationHistory(), api.getWebinars()
+                api.getNotificationTemplates(), api.getNotificationHistory(), api.getWebinars(),
+                api.getVimeoAccounts().catch(() => []), // Return empty array on failure
+                api.getVimeoVideos().catch(() => [])   // Return empty array on failure
             ]);
 
-            setCourses(coursesRes.data);
-            setUsers(usersRes.data);
-            setSales(salesRes.data);
-            setCategories(categoriesRes.data);
-            setInstructors(instructorsRes.data);
-            setReviews(reviewsRes.data);
-            setCoupons(couponsRes.data);
-            setNotificationTemplates(templatesRes.data);
-            setSentNotifications(historyRes.data);
-            setWebinars(webinarsRes.data);
+            setCourses(coursesRes.data || []);
+            setUsers(usersRes.data || []);
+            setSales(salesRes.data || []);
+            setCategories(categoriesRes.data || []);
+            setInstructors(instructorsRes.data || []);
+            setReviews(reviewsRes.data || []);
+            setCoupons(couponsRes.data || []);
+            setNotificationTemplates(templatesRes.data || []);
+            setSentNotifications(historyRes.data || []);
+            setWebinars(webinarsRes.data || []);
+            
+            // Vimeo API returns direct arrays, not wrapped in { data: [] }
+            setVimeoAccounts(Array.isArray(vimeoAccountsData) ? vimeoAccountsData : []);
+            setVimeoVideos(Array.isArray(vimeoVideosData) ? vimeoVideosData : []);
+            
         } catch (err: any) {
+            if (err.message.includes('Unauthorized') || err.message.includes('expired')) {
+                return;
+            }
             setError(err.message || 'Failed to fetch data');
             addToast(err.message || 'Failed to fetch data', 'error');
-            if (err.message.includes('Unauthorized')) {
-                localStorage.removeItem('authToken');
-                window.location.reload();
-            }
         } finally {
             setLoading(false);
         }
@@ -152,19 +159,47 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setCourses([]); setUsers([]); setSales([]); setCategories([]);
         setInstructors([]); setNotifications([]); setReviews([]); setCoupons([]);
         setSentNotifications([]); setNotificationTemplates([]); setWebinars([]); setCurrentStudent(null);
+        setVimeoVideos([]); setVimeoAccounts([]);
     }, []);
     
-    // Wrapped API calls to update state
     const performApiCall = useCallback(async <T,>(apiCall: () => Promise<T>, successMessage: string, errorMessage: string) => {
         try {
             const result = await apiCall();
             addToast(successMessage, 'success');
             return result;
         } catch (e: any) {
+            if (e.message.includes('Unauthorized') || e.message.includes('expired')) {
+                throw e;
+            }
             addToast(e.message || errorMessage, 'error');
             throw e;
         }
     }, [addToast]);
+
+    const addVimeoAccount = useCallback((name: string, apiKey: string) => performApiCall(async () => {
+        const res = await api.addVimeoAccount({ name, apiKey });
+        setVimeoAccounts(prev => [res, ...prev]);
+    }, 'Vimeo account connected!', 'Failed to connect Vimeo account.'), [performApiCall]);
+
+    const removeVimeoAccount = useCallback((id: number) => performApiCall(async () => {
+        await api.removeVimeoAccount(id);
+        setVimeoAccounts(prev => prev.filter(a => a.id !== id));
+    }, 'Vimeo account removed.', 'Failed to remove account.'), [performApiCall]);
+
+    const syncVimeoVideos = useCallback(async () => {
+        let loadingToastId: number | undefined;
+        try {
+            loadingToastId = addToast('Syncing with Vimeo...', 'success');
+            const vids = await api.syncVimeoVideos();
+            setVimeoVideos(vids);
+            if (loadingToastId) removeToast(loadingToastId);
+            addToast('Sync complete!', 'success');
+        } catch (e: any) {
+            if (loadingToastId) removeToast(loadingToastId);
+            if (e.message.includes('Unauthorized') || e.message.includes('expired')) return;
+            addToast(e.message || 'Sync failed', 'error');
+        }
+    }, [addToast, removeToast]);
 
     const addCourse = useCallback((courseData: Omit<Course, 'id'>) => performApiCall(async () => {
         const res = await api.createCourse(courseData);
@@ -301,7 +336,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             courses, setCourses, users, setUsers, sales, setSales, 
             categories, setCategories, instructors, setInstructors, notifications, setNotifications,
             reviews, setReviews, coupons, setCoupons, sentNotifications,
-            notificationTemplates, webinars, setWebinars, vimeoVideos,
+            notificationTemplates, webinars, setWebinars, vimeoVideos, vimeoAccounts,
+            addVimeoAccount, removeVimeoAccount, syncVimeoVideos,
             addCourse, updateCourse, deleteCourse,
             addCategory, deleteCategory, updateCategory,
             addUser, updateUser, deleteUser,

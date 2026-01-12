@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../../../context/AppContext';
 import { NotificationTarget, NotificationActionType, NotificationAction, NotificationTemplate } from '../../../types';
@@ -117,13 +118,15 @@ const NotificationTemplateForm: React.FC<NotificationTemplateFormProps> = ({ tem
                 <div>
                     <label htmlFor="target" className="block text-sm font-medium text-gray-700 mb-1">Target Audience</label>
                     <select id="target" value={target} onChange={e => setTarget(e.target.value as NotificationTarget)} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
-                        {Object.values(NotificationTarget).map(t => <option key={t} value={t}>{t}</option>)}
+                        {/* FIX: Explicitly cast to NotificationTarget[] for safe mapping. */}
+                        {(Object.values(NotificationTarget) as NotificationTarget[]).map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                 </div>
                 <div>
                     <label htmlFor="actionType" className="block text-sm font-medium text-gray-700 mb-1">Action (Optional)</label>
                     <select id="actionType" value={action.type} onChange={handleActionTypeChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
-                        {Object.values(NotificationActionType).map(t => <option key={t} value={t}>{t}</option>)}
+                        {/* FIX: Explicitly cast to NotificationActionType[] for safe mapping. */}
+                        {(Object.values(NotificationActionType) as NotificationActionType[]).map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                 </div>
             </div>

@@ -1,3 +1,4 @@
+
 -- CourseAdmin Pro Database Schema (MySQL)
 -- This schema defines the structure for the online course platform's backend.
 
@@ -13,7 +14,7 @@ CREATE TABLE users (
     phone_number VARCHAR(255) NULL,
     role ENUM('Student', 'Gold Member', 'Admin') NOT NULL,
     status ENUM('Active', 'Inactive') NOT NULL DEFAULT 'Active',
-    avatar_url VARCHAR(255),
+    avatar_url TEXT,
     password_reset_otp VARCHAR(10) NULL,
     password_reset_expires DATETIME NULL,
     joined_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -35,7 +36,7 @@ CREATE TABLE instructors (
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     bio TEXT,
-    avatar_url VARCHAR(255),
+    avatar_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -57,9 +58,9 @@ CREATE TABLE courses (
     description TEXT,
     price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     duration VARCHAR(100),
-    poster_image_url VARCHAR(255),
-    banner_image_url VARCHAR(255),
-    intro_video_url VARCHAR(255),
+    poster_image_url TEXT,
+    banner_image_url TEXT,
+    intro_video_url TEXT,
     access_type ENUM('lifetime', 'expiry') NOT NULL DEFAULT 'lifetime',
     access_duration_days INT,
     enable_certificate BOOLEAN NOT NULL DEFAULT FALSE,
@@ -86,10 +87,10 @@ CREATE TABLE lessons (
     title VARCHAR(255) NOT NULL,
     description TEXT,
     type ENUM('video', 'pdf', 'quiz', 'assignment') NOT NULL,
-    content_url VARCHAR(255),
+    content_url TEXT,
     duration_minutes INT NOT NULL DEFAULT 0,
-    attachment_url VARCHAR(255),
-    thumbnail_url VARCHAR(255),
+    attachment_url TEXT,
+    thumbnail_url TEXT,
     module_id CHAR(36) NOT NULL,
     order_index INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -108,10 +109,10 @@ CREATE TABLE webinars (
     type ENUM('Live', 'Recorded') NOT NULL,
     schedule_date DATETIME NOT NULL,
     duration_minutes INT NOT NULL DEFAULT 0,
-    video_url VARCHAR(255),
-    meeting_url VARCHAR(255),
+    video_url TEXT,
+    meeting_url TEXT,
     presenter_id CHAR(36),
-    thumbnail_url VARCHAR(255),
+    thumbnail_url TEXT,
     is_free BOOLEAN NOT NULL DEFAULT TRUE,
     price DECIMAL(10, 2) DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -357,7 +358,7 @@ CREATE TABLE promotions (
     id CHAR(36) PRIMARY KEY,
     title VARCHAR(255) NOT NULL,
     description TEXT,
-    image_url VARCHAR(255),
+    image_url TEXT,
     is_active BOOLEAN NOT NULL DEFAULT FALSE,
     action_type ENUM('None', 'View Course', 'View Coupon') DEFAULT 'None',
     action_payload VARCHAR(255), -- e.g., course_id or coupon_id
@@ -377,9 +378,49 @@ CREATE TABLE push_notification_tokens (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- =============================================
+-- Vimeo Integration Tables
+-- =============================================
+
+CREATE TABLE vimeo_accounts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    api_key_identifier VARCHAR(20) NOT NULL,
+    api_key TEXT NOT NULL,
+    connected_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE vimeo_folders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    folder_id VARCHAR(100) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE vimeo_videos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    video_id VARCHAR(100) UNIQUE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    link TEXT NOT NULL,
+    description TEXT,
+    duration INT, -- in seconds
+    thumbnail_url TEXT,
+    upload_date DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Seed data for promotions
 INSERT INTO promotions (id, title, description, image_url, is_active, action_type, action_payload) VALUES
 ('promo-1', 'Mid-Year Mega Sale!', 'Get up to 50% off on all Data Science courses. Limited time offer!', 'https://picsum.photos/seed/promo/800/400', TRUE, 'View Coupon', 'cpn-1');
+-- Seed Vimeo Accounts
+INSERT INTO vimeo_accounts (name, api_key_identifier, api_key) VALUES 
+('Main Production Account', '•••• 8xK2', 'dummy_token_prod_123'),
+('Marketing & Social Media', '•••• Zx99', 'dummy_token_mktg_456');
 
---pending
-ALTER TABLE `lessons` ADD `thumbnail_url` VARCHAR(255) NULL DEFAULT NULL AFTER `attachment_url`;
+-- Seed Vimeo Videos
+INSERT INTO vimeo_videos (video_id, title, link, description, duration, thumbnail_url, upload_date) VALUES 
+('76979871', 'Mastering React Components', 'https://vimeo.com/76979871', 'An advanced deep dive into functional components and hooks for modern web development.', 1245, 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80', '2025-01-10 10:00:00'),
+('148751763', 'Node.js Performance Tuning', 'https://vimeo.com/148751763', 'Learn how to optimize your backend architecture for high-traffic applications and low latency.', 3600, 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?w=800&q=80', '2025-01-15 14:30:00'),
+('64050901', 'UI/UX Design Fundamentals', 'https://vimeo.com/64050901', 'The core principles of user-centered design, accessibility, and modern interface aesthetics.', 890, 'https://images.unsplash.com/photo-1586717791821-3f44a563eb4c?w=800&q=80', '2024-12-20 09:15:00'),
+('1084537', 'Marketing Strategy 2025', 'https://vimeo.com/1084537', 'Future-proofing your digital presence with AI-driven marketing insights and growth hacks.', 2150, 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80', '2025-02-01 11:45:00'),
+('345678901', 'Python for Data Science', 'https://vimeo.com/345678901', 'Introduction to NumPy, Pandas, and Matplotlib for data visualization and analysis.', 5400, 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&q=80', '2025-01-25 16:20:00');

@@ -15,3 +15,4 @@ router.route('/:id')
     .delete(protect, admin, deleteWebinar);
 
 module.exports = router;
+

@@ -37,7 +37,7 @@ const WebinarForm: React.FC<WebinarFormProps> = ({ webinar, onSave }) => {
 
             setFormData({
                 title: webinar.title,
-                description: webinar.description,
+                description: webinar.description || '',
                 type: webinar.type,
                 scheduleDate: localISOTime,
                 duration: webinar.duration,
@@ -156,7 +156,7 @@ const WebinarForm: React.FC<WebinarFormProps> = ({ webinar, onSave }) => {
 
              <div>
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <RichTextEditor value={formData.description} onChange={(val) => setFormData(prev => ({ ...prev, description: val }))} />
+                <RichTextEditor value={formData.description || ''} onChange={(val) => setFormData(prev => ({ ...prev, description: val }))} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -170,7 +170,8 @@ const WebinarForm: React.FC<WebinarFormProps> = ({ webinar, onSave }) => {
                         <label htmlFor="videoUrl" className="block text-sm font-medium text-gray-700 mb-1">Recording URL (Vimeo)</label>
                         <select id="videoUrl" name="videoUrl" value={formData.videoUrl} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
                             <option value="">-- Select a video --</option>
-                            {vimeoVideos?.map(vid => <option key={vid.id} value={vid.url}>{vid.title}</option>)}
+                            {/* FIX: Use 'link' property as defined in VimeoVideo interface. */}
+                            {vimeoVideos?.map(vid => <option key={vid.id} value={vid.link}>{vid.title}</option>)}
                         </select>
                     </div>
                 )}

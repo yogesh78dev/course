@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Coupon } from '../../types';
@@ -37,12 +38,19 @@ const Coupons: React.FC = () => {
 
     const getStatus = (coupon: Coupon) => {
         const now = new Date();
+        // Set 'now' to midnight for simpler comparison if dates are just YYYY-MM-DD
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
         const startDate = new Date(coupon.startDate);
         const endDate = new Date(coupon.endDate);
-        endDate.setHours(23, 59, 59, 999); // Include the whole end day
+        
+        // Normalize start and end dates to ensure we compare based on calendar days
+        const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+        const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+        end.setHours(23, 59, 59, 999);
 
-        if (now < startDate) return { text: 'Scheduled', color: 'bg-blue-100 text-blue-800' };
-        if (now > endDate) return { text: 'Expired', color: 'bg-gray-100 text-gray-800' };
+        if (now < start) return { text: 'Scheduled', color: 'bg-blue-100 text-blue-800' };
+        if (now > end) return { text: 'Expired', color: 'bg-gray-100 text-gray-800' };
         if (coupon.usageLimit !== null && coupon.usageCount >= coupon.usageLimit) {
              return { text: 'Limit Reached', color: 'bg-yellow-100 text-yellow-800' };
         }
@@ -85,7 +93,11 @@ const Coupons: React.FC = () => {
                                         <td className="p-4 font-semibold text-gray-900">
                                             {coupon.type === 'Percentage' ? `${coupon.value}%` : `₹${Number(coupon.value).toFixed(2)}`}
                                         </td>
-                                        <td className="p-4 text-gray-700 text-sm">{`${coupon.startDate} to ${coupon.endDate}`}</td>
+                                        <td className="p-4 text-gray-700 text-sm">
+                                            <span className="block">{new Date(coupon.startDate).toLocaleDateString()}</span>
+                                            <span className="text-gray-400 text-xs">to</span>
+                                            <span className="block">{new Date(coupon.endDate).toLocaleDateString()}</span>
+                                        </td>
                                         <td className="p-4 text-gray-700">{`${coupon.usageCount} / ${coupon.usageLimit ?? '∞'}`}</td>
                                         <td className="p-4">
                                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${status.color}`}>

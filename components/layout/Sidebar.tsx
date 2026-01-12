@@ -1,7 +1,7 @@
 
 import React from 'react';
 import type { View } from '../../App';
-import { DashboardIcon, CoursesIcon, UsersIcon, SalesIcon, ReviewsIcon, SettingsIcon, CouponIcon, BellIcon, InstructorIcon, LogoutIcon, CloseIcon, WebinarIcon } from '../icons/index';
+import { DashboardIcon, CoursesIcon, UsersIcon, SalesIcon, ReviewsIcon, SettingsIcon, CouponIcon, BellIcon, InstructorIcon, LogoutIcon, CloseIcon, WebinarIcon, VideoIcon } from '../icons/index';
 
 interface SidebarProps {
     isOpen: boolean;
@@ -16,6 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentView, setCu
     const navItems: { name: View; icon: React.ReactNode }[] = [
         { name: 'Dashboard', icon: <DashboardIcon className="w-6 h-6" /> },
         { name: 'Courses', icon: <CoursesIcon className="w-6 h-6" /> },
+        { name: 'Vimeo', icon: <VideoIcon className="w-6 h-6" /> },
         { name: 'Instructors', icon: <InstructorIcon className="w-6 h-6" /> },
         { name: 'Webinars', icon: <WebinarIcon className="w-6 h-6" /> },
         { name: 'Users', icon: <UsersIcon className="w-6 h-6" /> },
@@ -41,12 +42,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen, currentView, setCu
 
             <aside className={`fixed top-0 left-0 h-full w-64 bg-white text-gray-700 flex flex-col border-r border-gray-200 z-30 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
                 <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
-                    <h1 className="text-2xl font-bold text-primary">CourseAdmin</h1>
+                    <h1 className="text-2xl font-bold text-primary">CreatorGuru</h1>
                     <button onClick={() => setIsOpen(false)} className="md:hidden p-1 text-gray-500 hover:text-gray-800">
                         <CloseIcon className="w-6 h-6" />
                     </button>
                 </div>
-                <nav className="flex-1 px-4 py-6 space-y-2">
+                <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
                     {navItems.map((item) => (
                         <button
                             key={item.name}

@@ -11,9 +11,10 @@ import { PlusIcon, EditIcon, DeleteIcon, VideoIcon, FileIcon, QuizIcon, Assignme
 interface LessonFormProps {
     lesson?: Lesson;
     onSave: (lessonData: Omit<Lesson, 'id' | 'tags'> & { tags: string[] }) => void;
+    onCancel: () => void;
 }
 
-const LessonForm: React.FC<LessonFormProps> = ({ lesson, onSave }) => {
+const LessonForm: React.FC<LessonFormProps> = ({ lesson, onSave, onCancel }) => {
     const { vimeoVideos } = useAppContext();
     const [attachmentName, setAttachmentName] = useState('');
 
@@ -23,7 +24,7 @@ const LessonForm: React.FC<LessonFormProps> = ({ lesson, onSave }) => {
         type: 'video' as Lesson['type'],
         contentUrl: '',
         duration: 0,
-        tags: '', // Stored as a comma-separated string for the input field
+        tags: '', 
         attachmentUrl: '',
         thumbnailUrl: '',
     });
@@ -32,12 +33,12 @@ const LessonForm: React.FC<LessonFormProps> = ({ lesson, onSave }) => {
         if (lesson) {
             setFormData({
                 title: lesson.title,
-                description: lesson.description,
+                description: lesson.description || '',
                 type: lesson.type,
-                contentUrl: lesson.contentUrl,
-                duration: lesson.duration,
-                tags: lesson.tags.join(', '),
-                attachmentUrl: lesson.attachmentUrl,
+                contentUrl: lesson.contentUrl || '',
+                duration: lesson.duration || 0,
+                tags: (lesson.tags || []).join(', '),
+                attachmentUrl: lesson.attachmentUrl || '',
                 thumbnailUrl: lesson.thumbnailUrl || '',
             });
             if (lesson.attachmentUrl) {
@@ -79,7 +80,7 @@ const LessonForm: React.FC<LessonFormProps> = ({ lesson, onSave }) => {
             </div>
             <div>
                  <ImageUpload 
-                    label="Lesson Thumbnail (Unique)"
+                    label="Lesson Thumbnail"
                     currentImageUrl={formData.thumbnailUrl}
                     onFileChange={handleThumbnailChange}
                     aspectRatio="16/9"
@@ -89,15 +90,6 @@ const LessonForm: React.FC<LessonFormProps> = ({ lesson, onSave }) => {
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <RichTextEditor value={formData.description} onChange={(val) => setFormData(prev => ({ ...prev, description: val }))} />
             </div>
-            {formData.type === 'video' && (
-                <div>
-                    <label htmlFor="contentUrl" className="block text-sm font-medium text-gray-700 mb-1">Vimeo Video</label>
-                    <select id="contentUrl" name="contentUrl" value={formData.contentUrl} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
-                        <option value="">-- Select a video --</option>
-                        {vimeoVideos?.map(vid => <option key={vid.id} value={vid.url}>{vid.title}</option>)}
-                    </select>
-                </div>
-            )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                     <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">Lesson Type</label>
@@ -113,22 +105,33 @@ const LessonForm: React.FC<LessonFormProps> = ({ lesson, onSave }) => {
                     <input type="number" id="duration" name="duration" value={formData.duration} onChange={handleChange} required className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" />
                 </div>
             </div>
+            {formData.type === 'video' && (
+                <div>
+                    <label htmlFor="contentUrl" className="block text-sm font-medium text-gray-700 mb-1">Vimeo Video URL</label>
+                    <select id="contentUrl" name="contentUrl" value={formData.contentUrl} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
+                        <option value="">-- Select a video --</option>
+                        {/* FIX: Use 'link' property as defined in VimeoVideo interface. */}
+                        {vimeoVideos?.map(vid => <option key={vid.id} value={vid.link}>{vid.title}</option>)}
+                    </select>
+                </div>
+            )}
             <div>
-                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">Tags (Comma separated)</label>
                 <input type="text" id="tags" name="tags" value={formData.tags} onChange={handleChange} placeholder="e.g. react, javascript, beginner" className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" />
             </div>
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Attach Media (PDF or Image)</label>
                 <div className="mt-1 flex items-center gap-4 text-sm">
-                     <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-500 border border-gray-300 px-3 py-2">
+                     <label htmlFor="file-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-primary hover:text-primary-500 border border-gray-300 px-3 py-2 shadow-sm">
                          <span>Choose file</span>
                          <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept=".pdf,.png,.jpg,.jpeg" />
                      </label>
-                     <p className="text-gray-500">{attachmentName || 'No file chosen'}</p>
+                     <p className="text-gray-500 italic">{attachmentName || 'No file chosen'}</p>
                 </div>
             </div>
-            <div className="flex justify-end pt-4">
-                <button type="submit" className="px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-700 font-semibold">Save Lesson</button>
+            <div className="flex justify-end space-x-3 pt-4">
+                <button type="button" onClick={onCancel} className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-semibold transition-colors">Cancel</button>
+                <button type="submit" className="px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-700 font-semibold shadow-md transition-all">Save Lesson</button>
             </div>
         </form>
     );
@@ -169,13 +172,24 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
     useEffect(() => {
         if (course) {
             setFormData({
-                ...course,
-                modules: course.modules || [], // Ensure modules is always an array
+                title: course.title || '',
+                description: course.description || '',
+                price: course.price || 0,
+                category: course.category || categories?.[0]?.name || '',
+                duration: course.duration || '',
+                instructorId: course.instructorId || instructors?.[0]?.id || '',
+                posterImageUrl: course.posterImageUrl || '',
+                bannerImageUrl: course.bannerImageUrl || '',
+                introVideoUrl: course.introVideoUrl || '',
+                accessType: course.accessType || 'lifetime',
+                accessDuration: course.accessDuration || null,
+                enableCertificate: !!course.enableCertificate,
+                modules: Array.isArray(course.modules) ? course.modules : [],
             });
         } else {
             setFormData(getInitialFormData());
         }
-    }, [course, getInitialFormData]);
+    }, [course, categories, instructors, getInitialFormData]);
     
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -196,7 +210,7 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
         } else if (name === 'accessDuration') {
             setFormData(prev => ({ ...prev, accessDuration: value ? parseInt(value) : null }));
         } else {
-            setFormData(prev => ({ ...prev, [name]: name === 'price' ? parseFloat(value) : value }));
+            setFormData(prev => ({ ...prev, [name]: name === 'price' ? parseFloat(value) || 0 : value }));
         }
     };
 
@@ -207,7 +221,7 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
     const handleDragStart = (e: DragEvent, item: DraggedItem) => {
         draggedItem.current = item;
         e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', ''); // For Firefox
+        e.dataTransfer.setData('text/plain', ''); 
     };
 
     const handleDragOver = (e: DragEvent, targetModuleIndex: number, targetLessonIndex?: number) => {
@@ -307,18 +321,22 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
         }
     };
     
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (course) {
-            updateCourse({ ...course, ...formData });
-        } else {
-            addCourse(formData);
+    const handleSubmit = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        try {
+            if (course) {
+                await updateCourse({ ...course, ...formData });
+            } else {
+                await addCourse(formData);
+            }
+            onSave();
+        } catch (err) {
+            // Toast handled by AppContext
         }
-        onSave();
     };
 
     const TabButton: React.FC<{ tabName: Tab; label: string; }> = ({ tabName, label }) => (
-        <button type="button" onClick={() => setActiveTab(tabName)} className={`px-4 py-2 font-medium text-sm rounded-t-lg transition-colors ${activeTab === tabName ? 'border-b-2 border-primary text-primary bg-primary-50' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
+        <button type="button" onClick={() => setActiveTab(tabName)} className={`px-6 py-3 font-semibold text-sm rounded-t-lg transition-all ${activeTab === tabName ? 'border-b-4 border-primary text-primary bg-primary-50 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}>
             {label}
         </button>
     );
@@ -328,162 +346,194 @@ const CourseForm: React.FC<CourseFormProps> = ({ course, onSave }) => {
         const showBottom = dropIndicator?.moduleIndex === moduleIndex && dropIndicator?.lessonIndex === lessonIndex && dropIndicator.position === 'bottom';
         return (
             <>
-                {showTop && <div className="h-1 bg-primary-300 rounded-full mx-2 my-1"></div>}
-                {showBottom && <div className="h-1 bg-primary-300 rounded-full mx-2 my-1"></div>}
+                {showTop && <div className="h-1 bg-primary-400 rounded-full mx-2 my-1 animate-pulse"></div>}
+                {showBottom && <div className="h-1 bg-primary-400 rounded-full mx-2 my-1 animate-pulse"></div>}
             </>
         )
     };
 
     return (
-        <form onSubmit={handleSubmit} onDrop={handleDrop} onDragOver={e => e.preventDefault()}>
+        <div onDrop={handleDrop} onDragOver={e => e.preventDefault()}>
             <div className="flex border-b border-gray-200">
-                <TabButton tabName="info" label="Course Info" />
-                <TabButton tabName="media" label="Media" />
-                <TabButton tabName="curriculum" label="Curriculum" />
+                <TabButton tabName="info" label="1. Basic Info" />
+                <TabButton tabName="media" label="2. Media Assets" />
+                <TabButton tabName="curriculum" label="3. Curriculum Builder" />
             </div>
-            <div className="py-6">
-                {activeTab === 'info' && (
-                    <div className="space-y-6 max-w-3xl mx-auto">
-                        <InputField label="Course Title" name="title" value={formData.title} onChange={handleChange} />
-                        <InputField label="Description" name="description" value={formData.description} onChange={handleChange}>
-                            <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={4} required className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300"></textarea>
-                        </InputField>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <InputField label="Price (₹) (Enter 0 for Free Course)" name="price" type="number" value={formData.price} onChange={handleChange} />
-                            <InputField label="Category" name="category" value={formData.category} onChange={handleChange}>
-                                <select id="category" name="category" value={formData.category} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
-                                    {categories?.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
-                                </select>
-                            </InputField>
-                            <InputField label="Instructor" name="instructorId" value={formData.instructorId} onChange={handleChange}>
-                                <select id="instructorId" name="instructorId" value={formData.instructorId} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
-                                    {instructors?.map(inst => <option key={inst.id} value={inst.id}>{inst.name}</option>)}
-                                </select>
-                            </InputField>
-                            <InputField label="Duration (e.g., 10 hours)" name="duration" value={formData.duration} onChange={handleChange} />
-                        
-                            <div className="col-span-1 md:col-span-2 bg-gray-50 p-4 rounded-lg border mt-2 space-y-4">
-                                <div>
-                                    <h4 className="font-semibold text-gray-800 mb-2">Access Control</h4>
-                                    <div className="flex items-center space-x-6">
-                                        <div className="flex items-center">
-                                            <input type="radio" id="lifetime" name="accessType" value="lifetime" checked={formData.accessType === 'lifetime'} onChange={handleChange} className="focus:ring-primary h-4 w-4 text-primary border-gray-300" />
-                                            <label htmlFor="lifetime" className="ml-2 block text-sm text-gray-900">Lifetime Access</label>
+            
+            {/* Main Form Content */}
+            <form onSubmit={handleSubmit}>
+                <div className="py-6 min-h-[400px]">
+                    {activeTab === 'info' && (
+                        <div className="space-y-6 max-w-4xl mx-auto px-4">
+                            <InputField label="Course Title" name="title" value={formData.title} onChange={handleChange} />
+                            <div className="space-y-1">
+                                <label className="block text-sm font-medium text-gray-700">Course Description</label>
+                                <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={5} required className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300"></textarea>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <InputField label="Price (₹)" name="price" type="number" value={formData.price} onChange={handleChange} />
+                                <InputField label="Category" name="category" value={formData.category} onChange={handleChange}>
+                                    <select id="category" name="category" value={formData.category} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
+                                        <option value="" disabled>Select Category</option>
+                                        {categories?.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+                                    </select>
+                                </InputField>
+                                <InputField label="Instructor" name="instructorId" value={formData.instructorId} onChange={handleChange}>
+                                    <select id="instructorId" name="instructorId" value={formData.instructorId} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
+                                        <option value="" disabled>Select Instructor</option>
+                                        {instructors?.map(inst => <option key={inst.id} value={inst.id}>{inst.name}</option>)}
+                                    </select>
+                                </InputField>
+                                <InputField label="Total Duration" name="duration" placeholder="e.g. 15 hours" value={formData.duration} onChange={handleChange} />
+                            
+                                <div className="col-span-1 md:col-span-2 bg-white p-6 rounded-xl border border-gray-200 shadow-sm mt-2 space-y-6">
+                                    <div>
+                                        <h4 className="font-bold text-gray-900 mb-3 border-b pb-2">Access Control</h4>
+                                        <div className="flex items-center space-x-8">
+                                            <label className="flex items-center cursor-pointer group">
+                                                <input type="radio" id="lifetime" name="accessType" value="lifetime" checked={formData.accessType === 'lifetime'} onChange={handleChange} className="focus:ring-primary h-5 w-5 text-primary border-gray-300" />
+                                                <span className="ml-3 font-medium text-gray-700 group-hover:text-primary transition-colors">Lifetime Access</span>
+                                            </label>
+                                            <label className="flex items-center cursor-pointer group">
+                                                <input type="radio" id="expiry" name="accessType" value="expiry" checked={formData.accessType === 'expiry'} onChange={handleChange} className="focus:ring-primary h-5 w-5 text-primary border-gray-300" />
+                                                <span className="ml-3 font-medium text-gray-700 group-hover:text-primary transition-colors">Limited Time Access</span>
+                                            </label>
                                         </div>
-                                        <div className="flex items-center">
-                                            <input type="radio" id="expiry" name="accessType" value="expiry" checked={formData.accessType === 'expiry'} onChange={handleChange} className="focus:ring-primary h-4 w-4 text-primary border-gray-300" />
-                                            <label htmlFor="expiry" className="ml-2 block text-sm text-gray-900">Limited Time</label>
-                                        </div>
+                                        {formData.accessType === 'expiry' && (
+                                            <div className="mt-4 animate-in slide-in-from-top-2 duration-300">
+                                                <label htmlFor="accessDuration" className="block text-sm font-semibold text-gray-700 mb-1">Access Duration (Days)</label>
+                                                <input 
+                                                    type="number" 
+                                                    id="accessDuration" 
+                                                    name="accessDuration" 
+                                                    value={formData.accessDuration || ''} 
+                                                    onChange={handleChange} 
+                                                    placeholder="e.g. 365"
+                                                    min="1"
+                                                    className="w-full md:w-1/2 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" 
+                                                />
+                                            </div>
+                                        )}
                                     </div>
-                                    {formData.accessType === 'expiry' && (
-                                        <div className="mt-4">
-                                            <label htmlFor="accessDuration" className="block text-sm font-medium text-gray-700 mb-1">Access Duration (days)</label>
-                                            <input 
-                                                type="number" 
-                                                id="accessDuration" 
-                                                name="accessDuration" 
-                                                value={formData.accessDuration || ''} 
-                                                onChange={handleChange} 
-                                                placeholder="e.g., 365"
-                                                min="1"
-                                                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300" 
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                                <div>
-                                    <h4 className="font-semibold text-gray-800 mb-2">Certification</h4>
-                                    <label htmlFor="enableCertificate" className="flex items-center cursor-pointer">
-                                        <div className="relative">
-                                            <input type="checkbox" id="enableCertificate" name="enableCertificate" className="sr-only" checked={formData.enableCertificate} onChange={handleChange} />
-                                            <div className={`block w-10 h-6 rounded-full transition-colors ${formData.enableCertificate ? 'bg-primary' : 'bg-gray-300'}`}></div>
-                                            <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${formData.enableCertificate ? 'translate-x-4' : ''}`}></div>
-                                        </div>
-                                        <div className="ml-3 text-sm text-gray-700">Enable Certificate of Completion</div>
-                                    </label>
+                                    <div className="pt-4">
+                                        <h4 className="font-bold text-gray-900 mb-3 border-b pb-2">Course Options</h4>
+                                        <label htmlFor="enableCertificate" className="flex items-center cursor-pointer group">
+                                            <div className="relative">
+                                                <input type="checkbox" id="enableCertificate" name="enableCertificate" className="sr-only" checked={formData.enableCertificate} onChange={handleChange} />
+                                                <div className={`block w-12 h-7 rounded-full transition-all duration-200 ${formData.enableCertificate ? 'bg-primary' : 'bg-gray-300'}`}></div>
+                                                <div className={`absolute left-1 top-1 bg-white w-5 h-5 rounded-full shadow-md transition-transform duration-200 ${formData.enableCertificate ? 'translate-x-5' : ''}`}></div>
+                                            </div>
+                                            <div className="ml-4 font-medium text-gray-700 group-hover:text-primary transition-colors">Issue Certificate on Completion</div>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                )}
-                {activeTab === 'media' && (
-                    <div className="space-y-6 max-w-3xl mx-auto">
-                        <ImageUpload label="Poster Image" aspectRatio="16/9" currentImageUrl={formData.posterImageUrl} onFileChange={(dataUrl) => handleFileChange('posterImageUrl', dataUrl)} />
-                        <ImageUpload label="Banner Image" aspectRatio="20/6" currentImageUrl={formData.bannerImageUrl} onFileChange={(dataUrl) => handleFileChange('bannerImageUrl', dataUrl)} />
-                        <InputField label="Intro Video" name="introVideoUrl" value={formData.introVideoUrl} onChange={handleChange}>
-                            <select id="introVideoUrl" name="introVideoUrl" value={formData.introVideoUrl} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
-                                <option value="">-- Select a video --</option>
-                                {vimeoVideos?.map(vid => <option key={vid.id} value={vid.url}>{vid.title}</option>)}
-                            </select>
-                        </InputField>
-                    </div>
-                )}
-                {activeTab === 'curriculum' && (
-                    <div className="space-y-4 p-4 bg-gray-50 rounded-lg border max-h-[60vh] overflow-y-auto">
-                        {formData.modules?.map((module, mIndex) => (
-                            <div key={module.id}>
-                                <DropZone moduleIndex={mIndex} lessonIndex={undefined} />
-                                <div className="bg-white p-3 rounded-md border shadow-sm group" onDragOver={(e) => handleDragOver(e, mIndex)}>
-                                    <div className="flex items-center justify-between" draggable onDragStart={(e) => handleDragStart(e, { type: 'module', moduleIndex: mIndex })} onDragEnd={handleDragEnd}>
-                                        <div className="flex items-center flex-grow">
-                                            <GripVerticalIcon className="w-5 h-5 text-gray-400 cursor-grab mr-2" />
-                                            <input type="text" value={module.title} onChange={(e) => updateModuleTitle(module.id, e.target.value)} className="font-semibold text-gray-800 border-b-2 border-transparent focus:border-primary focus:outline-none w-full bg-transparent" />
-                                        </div>
-                                        <button type="button" onClick={() => deleteModule(module.id)} className="p-1 text-red-500 hover:bg-red-100 rounded-full ml-2 opacity-0 group-hover:opacity-100 transition-opacity"><DeleteIcon className="w-4 h-4" /></button>
-                                    </div>
-                                    <div className="mt-2 space-y-1 pl-4 border-l-2 ml-2">
-                                        {module.lessons?.map((lesson, lIndex) => (
-                                            <div key={lesson.id} >
-                                                <DropZone moduleIndex={mIndex} lessonIndex={lIndex} />
-                                                <div className="flex items-center justify-between bg-gray-50 hover:bg-gray-100 p-2 rounded group/lesson" draggable onDragStart={(e) => handleDragStart(e, { type: 'lesson', moduleIndex: mIndex, lessonIndex: lIndex })} onDragEnd={handleDragEnd} onDragOver={(e) => handleDragOver(e, mIndex, lIndex)}>
-                                                    <div className="flex items-center space-x-2 flex-grow">
-                                                        <GripVerticalIcon className="w-5 h-5 text-gray-400 cursor-grab" />
-                                                        {getLessonIcon(lesson.type)}
-                                                        {lesson.thumbnailUrl && <img src={lesson.thumbnailUrl} alt="Thumb" className="w-8 h-5 object-cover rounded" />}
-                                                        <div className="flex flex-col text-sm">
-                                                            <span className="text-gray-800 font-medium">{lesson.title}</span>
-                                                            <span className="text-xs text-gray-500">{lesson.contentUrl ? `Video: ${vimeoVideos.find(v=>v.url===lesson.contentUrl)?.title || 'Selected'}` : ''}</span>
+                    )}
+                    {activeTab === 'media' && (
+                        <div className="space-y-8 max-w-4xl mx-auto px-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                 <ImageUpload label="Poster Image (Card View)" aspectRatio="16/9" currentImageUrl={formData.posterImageUrl} onFileChange={(dataUrl) => handleFileChange('posterImageUrl', dataUrl)} />
+                                 <ImageUpload label="Banner Image (Header View)" aspectRatio="16/9" currentImageUrl={formData.bannerImageUrl} onFileChange={(dataUrl) => handleFileChange('bannerImageUrl', dataUrl)} />
+                            </div>
+                            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                                <label htmlFor="introVideoUrl" className="block text-sm font-bold text-gray-900 mb-2">Introduction Video (Trailer)</label>
+                                <select id="introVideoUrl" name="introVideoUrl" value={formData.introVideoUrl} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300 bg-white shadow-sm">
+                                    <option value="">-- No Video (Select to add) --</option>
+                                    {/* FIX: Use 'link' property as defined in VimeoVideo interface. */}
+                                    {vimeoVideos?.map(vid => <option key={vid.id} value={vid.link}>{vid.title}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                    )}
+                    {activeTab === 'curriculum' && (
+                        <div className="max-w-5xl mx-auto px-4">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-bold text-gray-900">Modules & Lessons</h3>
+                                <button type="button" onClick={addModule} className="flex items-center bg-primary text-white px-4 py-2 rounded-lg font-bold hover:bg-primary-700 transition-all shadow-sm">
+                                    <PlusIcon className="w-5 h-5 mr-2" /> Add Module
+                                </button>
+                            </div>
+                            <div className="space-y-6">
+                                {formData.modules?.map((module, mIndex) => (
+                                    <div key={module.id} className="relative group">
+                                        <DropZone moduleIndex={mIndex} lessonIndex={undefined} />
+                                        <div className="bg-white rounded-xl border-2 border-gray-100 shadow-sm overflow-hidden" onDragOver={(e) => handleDragOver(e, mIndex)}>
+                                            <div className="bg-gray-50 p-4 border-b border-gray-100 flex items-center justify-between" draggable onDragStart={(e) => handleDragStart(e, { type: 'module', moduleIndex: mIndex })} onDragEnd={handleDragEnd}>
+                                                <div className="flex items-center flex-grow group/title">
+                                                    <GripVerticalIcon className="w-6 h-6 text-gray-400 cursor-grab mr-3" />
+                                                    <input 
+                                                        type="text" 
+                                                        value={module.title} 
+                                                        onChange={(e) => updateModuleTitle(module.id, e.target.value)} 
+                                                        className="font-bold text-lg text-gray-900 border-b-2 border-transparent focus:border-primary focus:outline-none w-full bg-transparent px-1 transition-colors" 
+                                                    />
+                                                </div>
+                                                <button type="button" onClick={() => deleteModule(module.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-all" title="Delete Module"><DeleteIcon className="w-5 h-5" /></button>
+                                            </div>
+                                            <div className="p-4 space-y-2">
+                                                {module.lessons?.map((lesson, lIndex) => (
+                                                    <div key={lesson.id} >
+                                                        <DropZone moduleIndex={mIndex} lessonIndex={lIndex} />
+                                                        <div className="flex items-center justify-between bg-white border border-gray-100 hover:border-primary-200 hover:shadow-md p-3 rounded-xl group/lesson transition-all" draggable onDragStart={(e) => handleDragStart(e, { type: 'lesson', moduleIndex: mIndex, lessonIndex: lIndex })} onDragEnd={handleDragEnd} onDragOver={(e) => handleDragOver(e, mIndex, lIndex)}>
+                                                            <div className="flex items-center space-x-3 flex-grow">
+                                                                <GripVerticalIcon className="w-5 h-5 text-gray-300 cursor-grab" />
+                                                                <div className="p-2 bg-gray-50 rounded-lg">
+                                                                    {getLessonIcon(lesson.type)}
+                                                                </div>
+                                                                {lesson.thumbnailUrl && <img src={lesson.thumbnailUrl} alt="Thumb" className="w-12 h-8 object-cover rounded-md shadow-sm border border-gray-100" />}
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-gray-900 font-semibold text-sm">{lesson.title}</span>
+                                                                    <span className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">{lesson.type} • {lesson.duration} mins</span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="flex items-center opacity-0 group-hover/lesson:opacity-100 transition-all space-x-1">
+                                                                <button type="button" onClick={() => openLessonModal(module, lesson)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-full" title="Edit Lesson"><EditIcon className="w-4 h-4" /></button>
+                                                                <button type="button" onClick={() => deleteLesson(module.id, lesson.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-full" title="Delete Lesson"><DeleteIcon className="w-4 h-4" /></button>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center opacity-0 group-hover/lesson:opacity-100 transition-opacity">
-                                                        <span className="text-xs text-gray-500 mr-2">({lesson.duration}m)</span>
-                                                        <button type="button" onClick={() => openLessonModal(module, lesson)} className="p-1 text-blue-600 hover:bg-blue-100 rounded-full"><EditIcon className="w-4 h-4" /></button>
-                                                        <button type="button" onClick={() => deleteLesson(module.id, lesson.id)} className="p-1 text-red-500 hover:bg-red-100 rounded-full"><DeleteIcon className="w-4 h-4" /></button>
-                                                    </div>
-                                                </div>
+                                                ))}
+                                                <DropZone moduleIndex={mIndex} lessonIndex={module.lessons.length} />
+                                                <button type="button" onClick={() => openLessonModal(module)} className="w-full flex items-center justify-center text-sm text-primary font-bold py-3 bg-primary-50 border-2 border-dashed border-primary-100 rounded-xl mt-3 hover:bg-primary-100 hover:border-primary-200 transition-all">
+                                                    <PlusIcon className="w-5 h-5 mr-2" /> Add Lesson to this Module
+                                                </button>
                                             </div>
-                                        ))}
-                                        <DropZone moduleIndex={mIndex} lessonIndex={module.lessons.length} />
-                                        <button type="button" onClick={() => openLessonModal(module)} className="flex items-center text-sm text-primary font-medium px-2 py-1 hover:bg-primary-50 rounded mt-1">
-                                            <PlusIcon className="w-4 h-4 mr-1" /> Add Lesson
-                                        </button>
+                                        </div>
                                     </div>
-                                </div>
+                                ))}
                             </div>
-                        ))}
-                        <button type="button" onClick={addModule} className="w-full flex items-center justify-center bg-primary-50 text-primary px-4 py-2 rounded-lg font-semibold hover:bg-primary-100 transition-colors border-2 border-dashed border-primary-200 mt-2">
-                            <PlusIcon className="w-5 h-5 mr-2" /> Add Module
-                        </button>
+                            {formData.modules.length === 0 && (
+                                <div className="text-center py-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl">
+                                    <VideoIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                    <p className="text-gray-500 font-medium">Your curriculum is empty. Start by adding a module.</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center mt-8 shadow-inner z-10">
+                    <p className="text-sm text-gray-500 font-medium italic">Changes are saved to the server only when you click "Publish Course"</p>
+                    <div className="flex space-x-4">
+                        <button type="button" onClick={onSave} className="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors">Discard</button>
+                        <button type="submit" className="px-8 py-2.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-700 shadow-lg shadow-primary-200 transition-all transform hover:-translate-y-0.5">Publish Course</button>
                     </div>
-                )}
-            </div>
+                </div>
+            </form>
 
-            <div className="flex justify-end space-x-3 pt-4 border-t">
-                <button type="button" onClick={onSave} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-700">Save Course</button>
-            </div>
-
-            <Modal isOpen={isLessonModalOpen} onClose={closeLessonModal} title={editingLessonInfo?.lesson ? "Edit Lesson" : "Add New Lesson"} size="lg">
-                <LessonForm lesson={editingLessonInfo?.lesson} onSave={handleSaveLesson} />
+            {/* MODAL IS NOW OUTSIDE OF MAIN FORM TO PREVENT NESTED FORM ISSUES */}
+            <Modal isOpen={isLessonModalOpen} onClose={closeLessonModal} title={editingLessonInfo?.lesson ? "Edit Lesson Details" : "New Lesson Details"} size="lg">
+                <LessonForm lesson={editingLessonInfo?.lesson} onSave={handleSaveLesson} onCancel={closeLessonModal} />
             </Modal>
-        </form>
+        </div>
     );
 };
 
-const InputField: React.FC<{ label: string; name: string; type?: string; value: string | number; onChange: (e: any) => void; required?: boolean; children?: React.ReactNode }> =
-    ({ label, name, type = 'text', value, onChange, required = true, children }) => (
-        <div>
-            <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+const InputField: React.FC<{ label: string; name: string; type?: string; value: string | number; onChange: (e: any) => void; required?: boolean; children?: React.ReactNode; placeholder?: string }> =
+    ({ label, name, type = 'text', value, onChange, required = true, children, placeholder }) => (
+        <div className="space-y-1">
+            <label htmlFor={name} className="block text-sm font-bold text-gray-900">{label}</label>
             {children ? children :
                 <input
                     type={type}
@@ -492,7 +542,8 @@ const InputField: React.FC<{ label: string; name: string; type?: string; value: 
                     value={value}
                     onChange={onChange}
                     required={required}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300"
+                    placeholder={placeholder}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-primary-300 transition-all"
                 />
             }
         </div>

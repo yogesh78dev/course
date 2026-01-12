@@ -9,8 +9,8 @@ export default defineConfig(({ mode }) => {
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.REACT_APP_API_URL': JSON.stringify(env.REACT_APP_API_URL)
       },
-      base: '/course/',
-      // base: '/',
+      // base: '/course/',
+      base: '/',
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),

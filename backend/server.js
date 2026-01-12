@@ -19,6 +19,7 @@ const studentRoutes = require('./routes/studentRoutes');
 const purchaseRoutes = require('./routes/purchaseRoutes');
 const promotionRoutes = require('./routes/promotionRoutes');
 const webinarRoutes = require('./routes/webinarRoutes');
+const vimeoRoutes = require('./routes/vimeoRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -44,6 +45,7 @@ app.use('/api/student', studentRoutes);
 app.use('/api/student/purchase', purchaseRoutes);
 app.use('/api/promotions', promotionRoutes);
 app.use('/api/webinars', webinarRoutes);
+app.use('/api/vimeo', vimeoRoutes);
 
 // Basic route
 app.get('/', (req, res) => {

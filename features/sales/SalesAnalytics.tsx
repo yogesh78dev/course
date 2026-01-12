@@ -16,15 +16,15 @@ const SalesAnalytics: React.FC = () => {
         <div className="space-y-6">
             <h2 className="text-3xl font-bold text-gray-800">Sales & Analytics</h2>
 
-            <div className="flex space-x-2 border-b border-gray-200">
+            <div className="flex space-x-2 border-b border-gray-200 overflow-x-auto">
                 {tabItems.map((tab) => (
                     <button
                         key={tab.name}
                         onClick={() => setActiveTab(tab.name)}
-                        className={`px-4 py-2 font-medium text-sm ${
+                        className={`px-4 py-2 font-medium text-sm transition-all whitespace-nowrap ${
                             activeTab === tab.name
                                 ? 'border-b-2 border-primary text-primary'
-                                : 'text-gray-500 hover:text-gray-700'
+                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                         }`}
                     >
                         {tab.name}

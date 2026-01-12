@@ -8,7 +8,7 @@ import StudentHeader from './components/layout/StudentHeader';
 import { ToastContainer } from './components/ui/Toast';
 import ConfirmationModal from './components/ui/ConfirmationModal';
 
-export type View = 'Dashboard' | 'Courses' | 'Instructors' | 'Users' | 'Sales & Analytics' | 'Coupons' | 'Reviews' | 'Notifications' | 'Settings' | 'Webinars';
+export type View = 'Dashboard' | 'Courses' | 'Instructors' | 'Users' | 'Sales & Analytics' | 'Coupons' | 'Reviews' | 'Notifications' | 'Settings' | 'Webinars' | 'Vimeo';
 
 const LoadingSpinner: React.FC = () => (
     <div className="flex justify-center items-center h-full w-full min-h-[50vh]">
@@ -26,6 +26,7 @@ const ReviewsView = React.lazy(() => import('./features/reviews/Reviews'));
 const CouponsView = React.lazy(() => import('./features/coupons/Coupons'));
 const NotificationsView = React.lazy(() => import('./features/notifications/Notifications'));
 const WebinarsView = React.lazy(() => import('./features/webinars/Webinars'));
+const VimeoView = React.lazy(() => import('./features/vimeo/Vimeo'));
 
 const App: React.FC = () => {
     const [currentView, setCurrentView] = useState<View>('Dashboard');
@@ -35,12 +36,26 @@ const App: React.FC = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-
     useEffect(() => {
         if(isLoggedIn) {
             fetchAllData();
         }
     }, [isLoggedIn, fetchAllData]);
+
+    useEffect(() => {
+        // Automatically throw user to login page when session expires
+        const handleAuthExpired = () => {
+            localStorage.removeItem('authToken');
+            setIsLoggedIn(false);
+            setIsStudentView(false);
+            setCurrentStudent(null);
+            clearAllData();
+            setCurrentView('Dashboard');
+        };
+
+        window.addEventListener('auth-expired', handleAuthExpired);
+        return () => window.removeEventListener('auth-expired', handleAuthExpired);
+    }, [clearAllData, setCurrentStudent]);
 
     const handleLogin = (token: string) => {
         localStorage.setItem('authToken', token);
@@ -74,6 +89,24 @@ const App: React.FC = () => {
     const renderView = () => {
         switch (currentView) {
             case 'Dashboard': return <DashboardView />;
+            case 'Courses': return <DashboardView />; // Fallback or logic here if needed
+            case 'Instructors': return <InstructorsView />;
+            case 'Users': return <UsersView setIsStudentView={setIsStudentView} />;
+            case 'Sales & Analytics': return <SalesAnalyticsView />;
+            case 'Coupons': return <CouponsView />;
+            case 'Reviews': return <ReviewsView />;
+            case 'Notifications': return <NotificationsView />;
+            case 'Settings': return <SettingsView />;
+            case 'Webinars': return <WebinarsView />;
+            case 'Vimeo': return <VimeoView />;
+            default: return <DashboardView />;
+        }
+    };
+
+    // Re-fixing direct lazy mapping for CoursesView as the previous change snippet was incomplete
+    const ActualView = () => {
+        switch (currentView) {
+            case 'Dashboard': return <DashboardView />;
             case 'Courses': return <CoursesView />;
             case 'Instructors': return <InstructorsView />;
             case 'Users': return <UsersView setIsStudentView={setIsStudentView} />;
@@ -83,9 +116,10 @@ const App: React.FC = () => {
             case 'Notifications': return <NotificationsView />;
             case 'Settings': return <SettingsView />;
             case 'Webinars': return <WebinarsView />;
+            case 'Vimeo': return <VimeoView />;
             default: return <DashboardView />;
         }
-    };
+    }
 
     return (
         <>
@@ -102,7 +136,7 @@ const App: React.FC = () => {
             {!isLoggedIn ? (
                 <Login onLogin={handleLogin} />
             ) : isStudentView ? (
-                <div className="flex h-screen bg-gray-100 text-gray-800">
+                <div className="flex h-screen bg-gray-100 text-gray-800 overflow-hidden">
                     <div className="flex-1 flex flex-col overflow-hidden">
                         <StudentHeader onLogout={() => setShowLogoutConfirm(true)} onExitStudentView={handleToggleStudentView} />
                         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 sm:p-6 md:p-8">
@@ -113,7 +147,7 @@ const App: React.FC = () => {
                     </div>
                 </div>
             ) : (
-                 <div className="flex h-screen bg-gray-100 text-gray-800 overflow-hidden">
+                 <div className="flex h-screen bg-gray-100 text-gray-800 overflow-hidden relative">
                     <Sidebar 
                         isOpen={isSidebarOpen} 
                         setIsOpen={setIsSidebarOpen}
@@ -121,16 +155,17 @@ const App: React.FC = () => {
                         setCurrentView={setCurrentView} 
                         onLogout={() => setShowLogoutConfirm(true)} 
                     />
-                    <div className="relative flex flex-col flex-1 md:ml-64 h-full overflow-hidden">
+                    
+                    <div className="flex-1 flex flex-col min-w-0 md:pl-64 h-full transition-all duration-300">
                         <Header 
                             onMenuButtonClick={() => setIsSidebarOpen(true)}
                             onToggleStudentView={handleToggleStudentView} 
                             onLogout={() => setShowLogoutConfirm(true)} 
                             setCurrentView={setCurrentView} 
                         />
-                        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 sm:p-6 md:p-8 relative">
+                        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 sm:p-6 md:p-8">
                             <Suspense fallback={<LoadingSpinner />}>
-                                {renderView()}
+                                <ActualView />
                             </Suspense>
                         </main>
                     </div>

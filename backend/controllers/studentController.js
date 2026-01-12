@@ -109,7 +109,7 @@ const updateStudentProfile = asyncHandler(async (req, res) => {
         fs.writeFileSync(imagePath, imageBuffer);
         
         // 3. Construct the URL and add to updateFields
-        const serverBaseUrl = process.env.SERVER_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+        const serverBaseUrl = process.env.SERVER_BASE_URL || `https://admin.creatorguru.in`;
         const imageUrl = `${serverBaseUrl}/uploads/avatars/${filename}`;
         updateFields.avatar_url = imageUrl;
     } else if (avatar === '' || avatar === null) {

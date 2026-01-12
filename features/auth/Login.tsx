@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { EmailIcon, KeyIcon } from '../../components/icons/index';
 import * as api from '../../services/api';
@@ -34,7 +35,7 @@ const Login: React.FC<LoginViewProps> = ({ onLogin }) => {
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
             <div className="w-full max-w-md">
                 <div className="text-center mb-8">
-                    <h1 className="text-4xl font-bold text-primary">CourseAdmin Pro</h1>
+                    <h1 className="text-4xl font-bold text-primary">CreatorGuru</h1>
                     <p className="text-gray-600 mt-2">Welcome back! Please sign in to the admin panel.</p>
                 </div>
                 <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-200">

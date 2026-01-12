@@ -6,6 +6,7 @@ import Modal from '../../components/ui/Modal';
 import CourseForm from './components/CourseForm';
 import Tooltip from '../../components/ui/Tooltip';
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
+import * as api from '../../services/api';
 
 const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
     return (
@@ -18,21 +19,32 @@ const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
 };
 
 const Courses: React.FC = () => {
-    const { courses, categories, deleteCourse, reviews, instructors } = useAppContext();
+    const { courses, categories, deleteCourse, reviews, instructors, addToast } = useAppContext();
     const [filterCategory, setFilterCategory] = useState<string>('All');
     const [filterType, setFilterType] = useState<'All' | 'Free' | 'Paid'>('All');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCourse, setEditingCourse] = useState<Course | undefined>(undefined);
     const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
+    const [loadingCourseId, setLoadingCourseId] = useState<string | null>(null);
 
     const openAddModal = () => {
         setEditingCourse(undefined);
         setIsModalOpen(true);
     };
 
-    const openEditModal = (course: Course) => {
-        setEditingCourse(course);
-        setIsModalOpen(true);
+    const openEditModal = async (course: Course) => {
+        setLoadingCourseId(course.id);
+        try {
+            // Fetch full course details including modules and lessons
+            const res = await api.getCourseById(course.id);
+            setEditingCourse(res.data);
+            setIsModalOpen(true);
+        } catch (error: any) {
+            console.error("Failed to fetch full course details:", error);
+            addToast("Failed to load course curriculum. Please try again.", 'error');
+        } finally {
+            setLoadingCourseId(null);
+        }
     };
 
     const closeModal = () => {
@@ -123,6 +135,8 @@ const Courses: React.FC = () => {
                             {filteredCourses?.map(course => {
                                 const { avg, count } = getAverageRating(course.id);
                                 const instructor = instructors.find(i => i.id === course.instructorId);
+                                const isThisCourseLoading = loadingCourseId === course.id;
+
                                 return (
                                     <tr key={course.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="p-4 flex items-center">
@@ -153,9 +167,20 @@ const Courses: React.FC = () => {
                                         <td className="p-4 text-gray-700">{instructor?.name || 'N/A'}</td>
                                         <td className="p-4">
                                             <div className="flex space-x-2">
-                                                <Tooltip text="Edit Course">
-                                                    <button onClick={() => openEditModal(course)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors">
-                                                        <EditIcon className="w-5 h-5"/>
+                                                <Tooltip text={isThisCourseLoading ? "Loading details..." : "Edit Course"}>
+                                                    <button 
+                                                        onClick={() => openEditModal(course)} 
+                                                        disabled={isThisCourseLoading}
+                                                        className={`p-2 text-blue-600 hover:bg-blue-100 rounded-full transition-colors ${isThisCourseLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                    >
+                                                        {isThisCourseLoading ? (
+                                                            <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                        ) : (
+                                                            <EditIcon className="w-5 h-5"/>
+                                                        )}
                                                     </button>
                                                 </Tooltip>
                                                 <Tooltip text="Delete Course">

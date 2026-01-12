@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { User, UserRole } from '../../types';
@@ -39,6 +40,7 @@ const Users: React.FC<UsersProps> = ({ setIsStudentView }) => {
     
     const openEnrollmentModal = async (user: User) => {
         try {
+            // FIX: Using correct API call from services.
             const res = await api.getStudentProfile(user.id);
             setSelectedUser(res.data);
             setIsEnrollmentModalOpen(true);
@@ -55,6 +57,7 @@ const Users: React.FC<UsersProps> = ({ setIsStudentView }) => {
     
     const handleLoginAsStudent = async (user: User) => {
         try {
+            // FIX: Using correct API call from services.
             const res = await api.getStudentProfile(user.id);
             setCurrentStudent(res.data);
             setIsStudentView(true);
@@ -92,7 +95,8 @@ const Users: React.FC<UsersProps> = ({ setIsStudentView }) => {
         }
     };
 
-    const studentRoles = Object.values(UserRole).filter(role => role !== UserRole.ADMIN);
+    // Explicitly cast to UserRole[] for safe mapping
+    const studentRoles = (Object.values(UserRole) as UserRole[]).filter(role => role !== UserRole.ADMIN);
 
     return (
         <div className="space-y-6">

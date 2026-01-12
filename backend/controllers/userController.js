@@ -1,3 +1,4 @@
+
 // backend/controllers/userController.js
 const db = require('../db');
 const asyncHandler = require('../utils/asyncHandler');
@@ -85,7 +86,7 @@ const createUser = asyncHandler(async (req, res) => {
             const imagePath = path.join(avatarsDir, filename);
             fs.writeFileSync(imagePath, imageBuffer);
             
-            const serverBaseUrl = process.env.SERVER_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+            const serverBaseUrl = process.env.SERVER_BASE_URL || `https://admin.creatorguru.in`;
             avatarUrl = `${serverBaseUrl}/uploads/avatars/${filename}`;
         }
     }
@@ -142,7 +143,7 @@ const updateUser = asyncHandler(async (req, res) => {
             fs.mkdirSync(avatarsDir, { recursive: true });
             const imagePath = path.join(avatarsDir, filename);
             fs.writeFileSync(imagePath, imageBuffer);
-            const serverBaseUrl = process.env.SERVER_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+            const serverBaseUrl = process.env.SERVER_BASE_URL || `https://admin.creatorguru.in`;
             avatar_url = `${serverBaseUrl}/uploads/avatars/${filename}`;
         }
     }
