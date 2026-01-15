@@ -144,11 +144,14 @@ const updateStudentProfile = asyncHandler(async (req, res) => {
 
 const getEnrolledCourses = asyncHandler(async (req, res) => {
     const query = `
-        SELECT c.*, cat.name as category, i.name as instructorName, e.completion_percentage as completionPercentage
+        SELECT c.*, cat.name as category, i.name as instructorName, 
+               e.completion_percentage as completionPercentage,
+               r.rating as studentRating, r.comment as studentReview, r.status as studentReviewStatus
         FROM courses c
         JOIN enrollments e ON c.id = e.course_id
         LEFT JOIN categories cat ON c.category_id = cat.id
         LEFT JOIN instructors i ON c.instructor_id = i.id
+        LEFT JOIN reviews r ON (c.id = r.course_id AND r.user_id = e.user_id)
         WHERE e.user_id = ?
     `;
     const [rows] = await db.query(query, [req.user.id]);
