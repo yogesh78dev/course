@@ -21,11 +21,3 @@ Token
 
 user id
 "uri": "/users/252313005",
-
-
-<!-- "jitna muskil rasta tha utna
-hi khoobsurat sunrise mila"
-
-"Nazare rukte nahi bas hum thak jate hain"
-
-View dekh k laga -Sari mehnat worth it thi -->
