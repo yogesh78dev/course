@@ -1,71 +1,84 @@
-
 // backend/controllers/notificationController.js
 const db = require('../db');
 const asyncHandler = require('../utils/asyncHandler');
 const { v4: uuidv4 } = require('uuid');
+const admin = require('../firebase');
 
 /**
- * FIREBASE INTEGRATION
- * Senior Note: Ensure 'firebase-admin' is installed and serviceAccountKey.json is present.
+ * Sends a high-priority multicast message to mobile devices.
+ * Implements senior-level error handling and token cleanup.
  */
-let admin;
-try {
-    admin = require('firebase-admin');
-    if (!admin.apps.length) {
-        const serviceAccount = require("../serviceAccountKey.json");
-        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-    }
-} catch (e) {
-    console.warn("FCM Warning: Firebase Admin SDK not initialized. Push notifications will be logged to console only.");
-}
-
-/**
- * Unified Push Delivery with Token Cleanup
- */
-const sendToFCM = async (tokens, title, message, data = {}) => {
+const sendToFCM = async (tokens, title, message, data = {}) => {    
     if (!tokens || tokens.length === 0) return;
     
+    // Ensure tokens are unique
     const uniqueTokens = [...new Set(tokens)];
+    // Define the FCM payload
     const payload = {
-        notification: { title, body: message },
+        notification: {
+            title: title,
+            body: message,
+        },
         data: {
             ...data,
-            click_action: "FLUTTER_NOTIFICATION_CLICK", 
+            click_action: "FLUTTER_NOTIFICATION_CLICK", // Vital for background handling in many frameworks
             timestamp: new Date().toISOString()
         },
         tokens: uniqueTokens,
     };
-
+    const message1 = {
+        tokens: uniqueTokens,
+        notification: {
+            title,
+            body
+        },
+        data: {
+            ...data,
+            click_action: "FLUTTER_NOTIFICATION_CLICK",
+            timestamp: new Date().toISOString()
+        }
+    };
+        
+    // Check if Firebase is initialized
     if (admin && admin.apps.length) {
+        console.log("fcm admin hit====>");
+        
         try {
-            // sendEachForMulticast is the modern batch replacement for sendMulticast
+            // Use modern batch sending method
             const response = await admin.messaging().sendEachForMulticast(payload);
+            // const response = await admin.messaging().sendEachForMulticast(message);
             
-            // SENIOR LOGIC: Clean up invalid tokens
+            // Log results
+            console.log(`FCM Stats: ${response.successCount} successful, ${response.failureCount} failed.`);
+
+            // CLEANUP LOGIC: Identify and delete tokens that are no longer valid
             if (response.failureCount > 0) {
-                const unregisterTokens = [];
+                const tokensToRemove = [];
                 response.responses.forEach((resp, idx) => {
                     if (!resp.success) {
                         const errorCode = resp.error?.code;
-                        // These codes mean the token is no longer valid
+                        // FCM error codes that indicate a token is dead
                         if (errorCode === 'messaging/registration-token-not-registered' || 
                             errorCode === 'messaging/invalid-registration-token') {
-                            unregisterTokens.push(uniqueTokens[idx]);
+                            tokensToRemove.push(uniqueTokens[idx]);
                         }
                     }
                 });
 
-                if (unregisterTokens.length > 0) {
-                    console.log(`Cleaning up ${unregisterTokens.length} stale tokens...`);
-                    await db.query('DELETE FROM push_notification_tokens WHERE token IN (?)', [unregisterTokens]);
+                if (tokensToRemove.length > 0) {
+                    console.log(`Auto-cleaning ${tokensToRemove.length} stale/invalid device tokens...`);
+                    await db.query('DELETE FROM push_notification_tokens WHERE token IN (?)', [tokensToRemove]);
                 }
             }
-            console.log(`FCM Delivery: ${response.successCount} success, ${response.failureCount} failed.`);
         } catch (error) {
-            console.error("FCM Critical Error:", error);
+            console.error("Critical FCM Send Error:", error);
         }
     } else {
-        console.log("Push Simulation Mode (No SDK):", JSON.stringify(payload, null, 2));
+        // Simulation mode for environments without a valid service account
+        console.log("--- PUSH NOTIFICATION SIMULATION (FCM NOT CONFIGURED) ---");
+        console.log("To:", uniqueTokens.length, "devices");
+        console.log("Payload:", JSON.stringify(payload, null, 2));
+        console.log("-------------------------------------------------------");
     }
 };
 
@@ -82,28 +95,43 @@ const sendNotification = asyncHandler(async (req, res) => {
     const { title, message, target, action, channels } = req.body;
     const notificationId = uuidv4();
 
-    // 1. Audit Log in DB (Always needed for In-App Center)
+    // 1. Persist to Audit Log / In-App Inbox
     await db.query(
         'INSERT INTO sent_notifications (id, title, message, target, action_type, action_payload, channels) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [notificationId, title, message, target, action.type, action.payload, JSON.stringify(channels)]
     );
-
-    // 2. Execute Channels
+    
+    // 2. Handle Push Channel
     if (channels.includes('Push')) {
         let tokenQuery = '';
+        const queryParams = [];
+
+        // Dynamic Targeting Logic
         if (target === 'All Users') {
             tokenQuery = 'SELECT token FROM push_notification_tokens';
         } else if (target === 'Students') {
-            tokenQuery = 'SELECT pt.token FROM push_notification_tokens pt JOIN users u ON pt.user_id = u.id WHERE u.role = "Student"';
+            tokenQuery = `
+                SELECT pt.token FROM push_notification_tokens pt 
+                JOIN users u ON pt.user_id = u.id 
+                WHERE u.role = 'Student'
+            `;
         } else if (target === 'Gold Members') {
-            tokenQuery = 'SELECT pt.token FROM push_notification_tokens pt JOIN users u ON pt.user_id = u.id WHERE u.role = "Gold Member"';
+            tokenQuery = `
+                SELECT pt.token FROM push_notification_tokens pt 
+                JOIN users u ON pt.user_id = u.id 
+                WHERE u.role = 'Gold Member'
+            `;
         }
 
         if (tokenQuery) {
-            const [rows] = await db.query(tokenQuery);
+            const [rows] = await db.query(tokenQuery, queryParams);
             const tokens = rows.map(r => r.token);
+            
+            console.log("sending to fcm==>");
+            
+            // Offload to FCM helper
             await sendToFCM(tokens, title, message, {
-                notificationId,
+                notificationId: notificationId,
                 actionType: action.type,
                 actionPayload: action.payload || ''
             });
@@ -111,44 +139,55 @@ const sendNotification = asyncHandler(async (req, res) => {
     }
 
     const [[newSentNotification]] = await db.query("SELECT *, DATE_FORMAT(sent_date, '%Y-%m-%d') as `sentDate` FROM sent_notifications WHERE id = ?", [notificationId]);
-    res.status(200).json({ message: 'Notification dispatched.', data: formatNotification(newSentNotification) });
+    res.status(200).json({ message: 'Notification processed and dispatched.', data: formatNotification(newSentNotification) });
 });
 
 const getHistory = asyncHandler(async (req, res) => {
     const [rows] = await db.query("SELECT *, DATE_FORMAT(sent_date, '%Y-%m-%d') as `sentDate` FROM sent_notifications ORDER BY sent_date DESC");
-    res.json({ message: 'Fetched history.', data: rows.map(formatNotification) });
+    res.json({ message: 'Successfully fetched notification history.', data: rows.map(formatNotification) });
 });
 
 const getTemplates = asyncHandler(async (req, res) => {
     const [rows] = await db.query('SELECT * FROM notification_templates ORDER BY created_at DESC');
-    res.json({ message: 'Fetched templates.', data: rows.map(formatNotification) });
+    res.json({ message: 'Successfully fetched notification templates.', data: rows.map(formatNotification) });
 });
 
 const createTemplate = asyncHandler(async (req, res) => {
     const { name, title, message, target, action } = req.body;
-    const id = uuidv4();
+    const templateId = uuidv4();
     await db.query(
         'INSERT INTO notification_templates (id, name, title, message, target, action_type, action_payload) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [id, name, title, message, target, action.type, action.payload]
+        [templateId, name, title, message, target, action.type, action.payload]
     );
-    const [[tpl]] = await db.query('SELECT * FROM notification_templates WHERE id = ?', [id]);
-    res.status(201).json({ message: 'Template created.', data: formatNotification(tpl) });
+
+    const [[newTemplate]] = await db.query('SELECT * FROM notification_templates WHERE id = ?', [templateId]);
+    res.status(201).json({ message: 'Template created.', data: formatNotification(newTemplate) });
 });
 
 const updateTemplate = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { name, title, message, target, action } = req.body;
-    await db.query(
+    const [result] = await db.query(
         'UPDATE notification_templates SET name = ?, title = ?, message = ?, target = ?, action_type = ?, action_payload = ? WHERE id = ?',
         [name, title, message, target, action.type, action.payload, id]
     );
-    const [[tpl]] = await db.query('SELECT * FROM notification_templates WHERE id = ?', [id]);
-    res.json({ message: 'Template updated.', data: formatNotification(tpl) });
+
+    if (result.affectedRows > 0) {
+        const [[updatedTemplate]] = await db.query('SELECT * FROM notification_templates WHERE id = ?', [id]);
+        res.json({ message: `Template ${id} updated.`, data: formatNotification(updatedTemplate) });
+    } else {
+        res.status(404).json({ message: 'Template not found' });
+    }
 });
 
 const deleteTemplate = asyncHandler(async (req, res) => {
-    await db.query('DELETE FROM notification_templates WHERE id = ?', [req.params.id]);
-    res.status(204).send();
+    const { id } = req.params;
+    const [result] = await db.query('DELETE FROM notification_templates WHERE id = ?', [id]);
+    if (result.affectedRows > 0) {
+        res.status(204).send();
+    } else {
+        res.status(404).json({ message: 'Template not found' });
+    }
 });
 
 module.exports = { sendNotification, getHistory, getTemplates, createTemplate, updateTemplate, deleteTemplate };
