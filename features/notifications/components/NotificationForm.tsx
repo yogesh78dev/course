@@ -11,12 +11,13 @@ interface NotificationFormProps {
 }
 
 const NotificationForm: React.FC<NotificationFormProps> = ({ onNotificationSent, loadTemplate, onClearTemplate }) => {
-    const { sendNotification, courses, coupons } = useAppContext();
+    const { sendNotification, courses, coupons, addToast } = useAppContext();
     const [title, setTitle] = useState('');
     const [message, setMessage] = useState('');
     const [target, setTarget] = useState<NotificationTarget>(NotificationTarget.ALL);
     const [action, setAction] = useState<NotificationAction>({ type: NotificationActionType.NONE });
     const [channels, setChannels] = useState<NotificationChannel[]>([NotificationChannel.IN_APP]);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         if (loadTemplate) {
@@ -46,41 +47,66 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onNotificationSent,
         );
     };
 
+    const showLocalNotification = async (notifTitle: string, notifBody: string) => {
+        if (!('Notification' in window)) return;
+
+        try {
+            let permission = Notification.permission;
+            
+            if (permission === 'default') {
+                permission = await Notification.requestPermission();
+            }
+
+            if (permission === 'granted') {
+                // On mobile devices, new Notification() might not work in some contexts
+                // but we try it as it provides visual feedback to the admin.
+                new Notification(notifTitle, { 
+                    body: notifBody,
+                    icon: '/favicon.ico' // Assuming a favicon exists
+                });
+            }
+        } catch (err) {
+            console.error("Local notification error:", err);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title || !message) {
-            alert('Title and message are required.');
+            addToast('Title and message are required.', 'error');
             return;
         }
 
-        if (channels.includes(NotificationChannel.PUSH)) {
-            if ('Notification' in window) {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    new Notification(title, { body: message });
-                } else {
-                    alert('Push notification permission was denied. The notification will still be sent in-app.');
-                }
-            } else {
-                alert('This browser does not support desktop notifications. The notification will still be sent in-app.');
+        setIsSubmitting(true);
+
+        try {
+            // 1. Trigger local notification attempt (non-blocking)
+            if (channels.includes(NotificationChannel.PUSH)) {
+                showLocalNotification(title, message);
             }
+
+            // 2. Call the backend API to broadcast to real users
+            await sendNotification({
+                title,
+                message,
+                target,
+                action,
+                channels,
+            });
+
+            // Reset form
+            setTitle('');
+            setMessage('');
+            setTarget(NotificationTarget.ALL);
+            setAction({ type: NotificationActionType.NONE });
+            setChannels([NotificationChannel.IN_APP]);
+            onNotificationSent();
+        } catch (err: any) {
+            // Error toast handled by context, but we reset loading state
+            console.error("Failed to dispatch notification:", err);
+        } finally {
+            setIsSubmitting(false);
         }
-
-        sendNotification({
-            title,
-            message,
-            target,
-            action,
-            channels,
-        });
-
-        // Reset form
-        setTitle('');
-        setMessage('');
-        setTarget(NotificationTarget.ALL);
-        setAction({ type: NotificationActionType.NONE });
-        setChannels([NotificationChannel.IN_APP]);
-        onNotificationSent();
     };
 
     const renderActionPayloadInput = () => {
@@ -141,14 +167,12 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onNotificationSent,
                     <div>
                         <label htmlFor="target" className="block text-sm font-medium text-gray-700 mb-1">Target Audience</label>
                         <select id="target" value={target} onChange={e => setTarget(e.target.value as NotificationTarget)} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
-                            {/* FIX: Explicitly cast to NotificationTarget[] for safe mapping. */}
                             {(Object.values(NotificationTarget) as NotificationTarget[]).map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                     </div>
                      <div>
                         <label htmlFor="actionType" className="block text-sm font-medium text-gray-700 mb-1">Action (Optional)</label>
                         <select id="actionType" value={action.type} onChange={handleActionTypeChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-300">
-                            {/* FIX: Explicitly cast to NotificationActionType[] for safe mapping. */}
                             {(Object.values(NotificationActionType) as NotificationActionType[]).map(t => <option key={t} value={t}>{t}</option>)}
                         </select>
                     </div>
@@ -168,9 +192,20 @@ const NotificationForm: React.FC<NotificationFormProps> = ({ onNotificationSent,
                     </div>
                 </div>
                  <div className="flex justify-end pt-2">
-                    <button type="submit" className="flex items-center bg-primary text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-primary-700 transition-colors disabled:bg-primary-300" disabled={channels.length === 0}>
-                        <SendIcon className="w-5 h-5 mr-2"/>
-                        Send Notification
+                    <button 
+                        type="submit" 
+                        className="flex items-center bg-primary text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-primary-700 transition-colors disabled:bg-primary-300" 
+                        disabled={channels.length === 0 || isSubmitting}
+                    >
+                        {isSubmitting ? (
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        ) : (
+                            <SendIcon className="w-5 h-5 mr-2"/>
+                        )}
+                        {isSubmitting ? 'Processing...' : 'Send Notification'}
                     </button>
                 </div>
             </form>

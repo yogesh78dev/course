@@ -4,13 +4,12 @@ const asyncHandler = require('../utils/asyncHandler');
 const { v4: uuidv4 } = require('uuid');
 const { saveBase64Image, deleteFileByUrl } = require('../utils/fileUtils');
 
-// @desc    Get the single active promotion
+// @desc    Get all active promotions for the mobile app
 // @route   GET /api/promotions/public/active
 // @access  Public
 const getActivePromotion = asyncHandler(async (req, res) => {
-    const [rows] = await db.query('SELECT id, title, description, image_url as imageUrl, action_type as actionType, action_payload as actionPayload FROM promotions WHERE is_active = TRUE LIMIT 1');
-    const promotion = rows.length > 0 ? rows[0] : null;
-    res.json({ message: 'Successfully fetched active promotion.', data: promotion });
+    const [rows] = await db.query('SELECT id, title, description, image_url as imageUrl, action_type as actionType, action_payload as actionPayload FROM promotions WHERE is_active = TRUE ORDER BY created_at DESC');
+    res.json({ message: 'Successfully fetched active promotions.', data: rows });
 });
 
 // @desc    Get all promotions
@@ -31,11 +30,7 @@ const createOrUpdatePromotion = asyncHandler(async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        // If setting this one to active, deactivate all others
-        if (isActive) {
-            const deactivateQuery = id ? 'UPDATE promotions SET is_active = FALSE WHERE id != ?' : 'UPDATE promotions SET is_active = FALSE';
-            await connection.query(deactivateQuery, id ? [id] : []);
-        }
+        // Multiple banners can now be active simultaneously.
 
         let promotionId = id || uuidv4();
         let finalImageUrl = imageUrl;
