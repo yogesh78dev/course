@@ -36,13 +36,14 @@ const getStudentProfile = asyncHandler(async (req, res) => {
     const [enrollments] = await db.query(enrollmentsQuery, [studentId]);
     profile.enrolledCourses = enrollments;
 
-    // 3. Get watch history
+    // 3. Get watch history including pause timestamp
     const historyQuery = `
         SELECT 
             wh.lesson_id as 'lessonId',
             m.course_id as 'courseId',
             wh.watched_at as 'watchedAt',
-            wh.progress_percentage as 'progress'
+            wh.progress_percentage as 'progress',
+            wh.last_paused_timestamp as 'lastPausedTimestamp'
         FROM watch_history wh 
         JOIN lessons l ON wh.lesson_id = l.id 
         JOIN modules m ON l.module_id = m.id
@@ -159,17 +160,19 @@ const getEnrolledCourses = asyncHandler(async (req, res) => {
 });
 
 const updateLessonProgress = asyncHandler(async (req, res) => {
-    const { lessonId, progress } = req.body;
+    const { lessonId, progress, lastPausedTimestamp } = req.body;
     const studentId = req.user.id;
 
     // 1. Update watch history
     const historyId = uuidv4();
     const query = `
-        INSERT INTO watch_history (id, user_id, lesson_id, progress_percentage)
-        VALUES (?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE progress_percentage = VALUES(progress_percentage)
+        INSERT INTO watch_history (id, user_id, lesson_id, progress_percentage, last_paused_timestamp)
+        VALUES (?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE 
+            progress_percentage = VALUES(progress_percentage),
+            last_paused_timestamp = VALUES(last_paused_timestamp)
     `;
-    await db.query(query, [historyId, studentId, lessonId, progress]);
+    await db.query(query, [historyId, studentId, lessonId, progress, lastPausedTimestamp || 0]);
 
     // 2. Recalculate course completion percentage
     const [[courseInfo]] = await db.query(
@@ -210,7 +213,8 @@ const updateLessonProgress = asyncHandler(async (req, res) => {
         message: 'Lesson progress updated successfully.',
         data: { 
             newCompletionPercentage,
-            courseDuration: duration
+            courseDuration: duration,
+            lastPausedTimestamp: lastPausedTimestamp || 0
         }
     });
 });
@@ -326,7 +330,7 @@ const getEnrolledCourseDetails = asyncHandler(async (req, res) => {
     }));
 
     const historyQuery = `
-        SELECT lesson_id as lessonId, progress_percentage as progress
+        SELECT lesson_id as lessonId, progress_percentage as progress, last_paused_timestamp as lastPausedTimestamp
         FROM watch_history
         WHERE user_id = ? AND lesson_id IN (
             SELECT l.id FROM lessons l JOIN modules m ON l.module_id = m.id WHERE m.course_id = ?
@@ -499,6 +503,11 @@ const registerPushToken = asyncHandler(async (req, res) => {
     res.status(200).json({ message: 'Push notification token registered successfully.' });
 });
 
+// Mock stubs for missing functions to satisfy route imports
+// const requestRedemption = asyncHandler(async (req, res) => res.status(501).send());
+// const getPointHistory = asyncHandler(async (req, res) => res.status(501).send());
+// const getMyRedemptions = asyncHandler(async (req, res) => res.status(501).send());
+
 module.exports = { 
     getStudentProfile, 
     updateStudentProfile, 
@@ -512,5 +521,8 @@ module.exports = {
     getMyCertificates,
     getDashboardData,
     getCertificateDetails,
-    registerPushToken
+    registerPushToken,
+    // requestRedemption,
+    // getPointHistory,
+    // getMyRedemptions
 };
