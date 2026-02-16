@@ -190,6 +190,14 @@ const updateLessonProgress = asyncHandler(async (req, res) => {
          WHERE wh.user_id = ? AND m.course_id = ? AND wh.progress_percentage = 100`,
         [studentId, courseId]
     );
+
+    // ✅ Get course duration
+    const [[{ duration }]] = await db.query(
+        `SELECT duration 
+        FROM courses 
+        WHERE id = ?`,
+        [courseId]
+    );
     
     const newCompletionPercentage = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
     
@@ -200,7 +208,10 @@ const updateLessonProgress = asyncHandler(async (req, res) => {
 
     res.json({ 
         message: 'Lesson progress updated successfully.',
-        data: { newCompletionPercentage }
+        data: { 
+            newCompletionPercentage,
+            courseDuration: duration
+        }
     });
 });
 
